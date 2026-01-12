@@ -1,0 +1,18 @@
+package com.heypixel.heypixelmod.obsoverlay.modules.impl.render.projectiles.datas;
+
+import net.minecraft.world.entity.projectile.ThrownPotion;
+
+import java.awt.*;
+import java.util.Collections;
+import java.util.HashSet;
+
+public class EntityPotionData extends BasicProjectileData {
+    public EntityPotionData() {
+        super(new HashSet<>(Collections.singleton(ThrownPotion.class)), new Color(255, 66, 249));
+    }
+
+    @Override
+    public float getGravity() {
+        return 0.05F;
+    }
+}
