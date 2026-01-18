@@ -105,7 +105,7 @@ public class Eagle extends Module {
 
     @EventTarget
     public void onMotion(EventMotion e) {
-        if (!canFast || timer.delay(MathUtils.getRandomIntInRange((int)maxDelay.getCurrentValue(), (int)delay.getCurrentValue()))) return;
+        if (!canFast && timer.delay(MathUtils.getRandomIntInRange((int)maxDelay.getCurrentValue(), (int)delay.getCurrentValue()))) return;
         if (e.getType() == EventType.PRE) {
             MinecraftAccessor accessor = (MinecraftAccessor) mc;
             if (mc.options.keyUse.isDown() && mc.player.getMainHandItem().getItem() instanceof BlockItem) {
