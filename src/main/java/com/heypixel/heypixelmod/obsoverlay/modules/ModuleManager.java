@@ -75,7 +75,7 @@ public class ModuleManager {
                 new ScoreboardSpoof(),
                 new AutoTools(),
                 new ViewClip(),
-                new Disabler(),
+//                new Disabler(),
                 new Projectile(),
                 new TimeChanger(),
                 new FullBright(),
@@ -113,7 +113,8 @@ public class ModuleManager {
                 new AutoHeypixel(),
                 new ArrayListModule(),
 //                new Speed(),
-                new GrimLowHop()
+                new GrimLowHop(),
+                new AimAssist()
         );
     }
 

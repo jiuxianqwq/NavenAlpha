@@ -85,8 +85,8 @@ public class Blink extends Module {
             .getFloatValue();
     public FloatValue maxTicks = ValueBuilder.create(this, "Max Ticks")
             .setMinFloatValue(10.0F)
-            .setMaxFloatValue(500.0F)
-            .setDefaultFloatValue(200.0F)
+            .setMaxFloatValue(200.0F)
+            .setDefaultFloatValue(20.0F)
             .setFloatStep(1.0F)
             .build()
             .getFloatValue();

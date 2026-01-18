@@ -9,6 +9,7 @@ import com.heypixel.heypixelmod.obsoverlay.modules.ModuleInfo;
 import com.heypixel.heypixelmod.obsoverlay.modules.ModuleManager;
 import com.heypixel.heypixelmod.obsoverlay.utils.RenderUtils;
 import com.heypixel.heypixelmod.obsoverlay.utils.SmoothAnimationTimer;
+import com.heypixel.heypixelmod.obsoverlay.utils.renderer.ColorUtil;
 import com.heypixel.heypixelmod.obsoverlay.utils.shader.impl.KawaseBlur;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.Skia;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.font.Fonts;
@@ -51,22 +52,16 @@ public class ArrayListModule extends Module {
             .setDefaultBooleanValue(true)
             .build()
             .getBooleanValue();
-    public BooleanValue rainbow = ValueBuilder.create(this, "Rainbow")
+    public BooleanValue rainbow = ValueBuilder.create(this, "Sync Color")
             .setDefaultBooleanValue(true)
             .build()
             .getBooleanValue();
-    public FloatValue rainbowSpeed = ValueBuilder.create(this, "Rainbow Speed")
-            .setMinFloatValue(1.0F)
-            .setMaxFloatValue(20.0F)
-            .setDefaultFloatValue(17.5F)
-            .setFloatStep(0.1F)
-            .build()
-            .getFloatValue();
-    public FloatValue rainbowOffset = ValueBuilder.create(this, "Rainbow Offset")
-            .setMinFloatValue(1.0F)
-            .setMaxFloatValue(20.0F)
-            .setDefaultFloatValue(10.0F)
-            .setFloatStep(0.1F)
+    public FloatValue rainbowSpeed = ValueBuilder.create(this, "Speed")
+            .setMinFloatValue(2.0F)
+            .setMaxFloatValue(30.0F)
+            .setDefaultFloatValue(25.0F)
+            .setFloatStep(1.0F)
+            .setVisibility(() -> rainbow.getCurrentValue())
             .build()
             .getFloatValue();
     public FloatValue arrayListSize = ValueBuilder.create(this, "ArrayList Size")
@@ -143,9 +138,7 @@ public class ArrayListModule extends Module {
 
                 Color color = Color.white;
                 if (this.rainbow.getCurrentValue()) {
-                    color = RenderUtils.getRainbow(
-                            (int) (-startY * this.rainbowOffset.getCurrentValue()), 1.0F, 1.0F, (21.0F - this.rainbowSpeed.getCurrentValue()) * 1000.0F
-                    );
+                    color = ColorUtil.interpolateColorsBackAndForth((int)this.rainbowSpeed.getCurrentValue(), (int)-startY, HUD.getColor1(), HUD.getColor2(), false);
                 }
 
                 listPaint.reset();
@@ -186,9 +179,8 @@ public class ArrayListModule extends Module {
 
             Color color = Color.white;
             if (this.rainbow.getCurrentValue()) {
-                color = RenderUtils.getRainbow(
-                        (int) (-blurMatrix.y * this.rainbowOffset.getCurrentValue()), 1.0F, 1.0F, (21.0F - this.rainbowSpeed.getCurrentValue()) * 1000.0F
-                );
+                color = ColorUtil.interpolateColorsBackAndForth((int)this.rainbowSpeed.getCurrentValue(), (int)-blurMatrix.y, HUD.getColor1(), HUD.getColor2(), false);
+
             }
 
             blurPaint.setColor(color.getRGB());

@@ -125,7 +125,10 @@ public class Scaffold extends Module {
             .setVisibility(telly::getCurrentValue)
             .build()
             .getFloatValue();
-    BooleanValue safeWalk = ValueBuilder.create(this, "SafeWalk").setDefaultBooleanValue(true).build().getBooleanValue();
+    BooleanValue safeWalk = ValueBuilder.create(this, "SafeWalk").setDefaultBooleanValue(true)
+            .setVisibility(() -> !telly.getCurrentValue())
+            .build()
+            .getBooleanValue();
     private int airTick;
     private int yLevel;
     private BlockPos blockPos;

@@ -84,10 +84,6 @@ public class MathUtils {
         return minDouble >= maxDouble ? minDouble : random.nextFloat() * (maxDouble - minDouble) + minDouble;
     }
 
-    public static int getRandomIntInRange(int startInclusive, int endExclusive, Random random) {
-        return endExclusive - startInclusive <= 0 ? startInclusive : startInclusive + random.nextInt(endExclusive - startInclusive);
-    }
-
     public static int getRandomIntInRange(int startInclusive, int endExclusive) {
         return endExclusive - startInclusive <= 0 ? startInclusive : startInclusive + new Random().nextInt(endExclusive - startInclusive);
     }
@@ -97,16 +93,16 @@ public class MathUtils {
         return newAngle < -180.0F ? newAngle + 360.0F : (newAngle > 180.0F ? newAngle - 360.0F : newAngle);
     }
 
-    public static float interpolate(float delta, float start, float end) {
-        return start + delta * (end - start);
+    public static Double interpolate(double oldValue, double newValue, double interpolationValue) {
+        return (oldValue + (newValue - oldValue) * interpolationValue);
     }
 
-    public static double interpolate(double delta, double start, float end) {
-        return start + delta * ((double) end - start);
+    public static float interpolateFloat(float oldValue, float newValue, double interpolationValue) {
+        return interpolate(oldValue, newValue, (float) interpolationValue).floatValue();
     }
 
-    public static double interpolate(float delta, double start, double end) {
-        return start + (double) delta * (end - start);
+    public static int interpolateInt(int oldValue, int newValue, double interpolationValue) {
+        return interpolate(oldValue, newValue, (float) interpolationValue).intValue();
     }
 
     public static float interpolateAngle(float delta, float start, float end) {
@@ -194,4 +190,5 @@ public class MathUtils {
     public static double sqrt(double r) {
         return Math.sqrt(r);
     }
+
 }

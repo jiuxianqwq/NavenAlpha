@@ -56,7 +56,9 @@ public class GhostHand extends Module {
     @EventTarget
     public void onClick(EventClick event) {
         if (mc.options.keyUse.isDown()) {
-            ghostInteractWithChest();
+            if (ghostInteractWithChest()) {
+                event.setCancelled(true);
+            }
         }
     }
 
