@@ -5,6 +5,6 @@ import cn.paradisemc.ZKMIndy;
 @ZKMIndy
 public class Version {
     public static String getVersion() {
-        return "build-260119";
+        return "build-260124";
     }
 }

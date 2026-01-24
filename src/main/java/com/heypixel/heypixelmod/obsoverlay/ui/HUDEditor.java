@@ -35,11 +35,9 @@ public class HUDEditor extends Screen {
         dragValues.clear();
         ModuleManager moduleManager = Naven.getInstance().getModuleManager();
         for (Module module : moduleManager.getModules()) {
-            if (module.isEnabled()) {
-                for (Value value : Naven.getInstance().getValueManager().getValues()) {
-                    if (value.getKey() == module && value.getValueType() == ValueType.DRAG) {
-                        dragValues.add(value.getDragValue());
-                    }
+            for (Value value : Naven.getInstance().getValueManager().getValues()) {
+                if (value.getKey() == module && value.getValueType() == ValueType.DRAG) {
+                    dragValues.add(value.getDragValue());
                 }
             }
         }
@@ -58,6 +56,8 @@ public class HUDEditor extends Screen {
                 float y = dragValue.getY();
                 float width = dragValue.getWidth();
                 float height = dragValue.getHeight();
+                float renderWidth = width <= 0.0F ? 80.0F : width;
+                float renderHeight = height <= 0.0F ? 20.0F : height;
 
                 // Handle dragging
                 if (draggingValue == dragValue) {
@@ -66,13 +66,13 @@ public class HUDEditor extends Screen {
                     x = dragValue.getX();
                     y = dragValue.getY();
                 }
-                boolean isHovering = RenderUtils.isHoveringBound(mouseX, mouseY, x, y, width, height);
+                boolean isHovering = RenderUtils.isHoveringBound(mouseX, mouseY, x, y, renderWidth, renderHeight);
                 if (isHovering) {
 //                pose.pushPose();
 //                RenderUtils.drawRoundedBorder(pose, x - 5, y - 5, width + 10, height + 10, 5, 5, new Color(255, 255, 255, 255).getRGB());
 //                RenderUtils.drawRectBound(pose, x, y, width, height, new Color(255, 255, 255, 255).getRGB());
 //                pose.popPose();
-                    Skia.drawOutline(x - 5, y - 5, width + 10, height + 10, 5, 2, new Color(255, 255, 255));
+                    Skia.drawOutline(x - 5, y - 5, renderWidth + 10, renderHeight + 10, 5, 2, new Color(255, 255, 255));
                 }
 
             }
@@ -89,7 +89,11 @@ public class HUDEditor extends Screen {
         if (button == 0) { // Left click
             for (int i = dragValues.size() - 1; i >= 0; i--) { // Reverse order to select top-most element
                 DragValue dragValue = dragValues.get(i);
-                if (RenderUtils.isHoveringBound((int) mouseX, (int) mouseY, dragValue.getX(), dragValue.getY(), dragValue.getWidth(), dragValue.getHeight())) {
+                float width = dragValue.getWidth();
+                float height = dragValue.getHeight();
+                float renderWidth = width <= 0.0F ? 80.0F : width;
+                float renderHeight = height <= 0.0F ? 20.0F : height;
+                if (RenderUtils.isHoveringBound((int) mouseX, (int) mouseY, dragValue.getX(), dragValue.getY(), renderWidth, renderHeight)) {
                     draggingValue = dragValue;
                     dragOffsetX = (float) mouseX - dragValue.getX();
                     dragOffsetY = (float) mouseY - dragValue.getY();
@@ -107,6 +111,16 @@ public class HUDEditor extends Screen {
             return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (button == 0 && draggingValue != null) {
+            draggingValue.setX((float) mouseX - dragOffsetX);
+            draggingValue.setY((float) mouseY - dragOffsetY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override

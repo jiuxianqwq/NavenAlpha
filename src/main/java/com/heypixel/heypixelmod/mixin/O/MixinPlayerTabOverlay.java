@@ -3,16 +3,22 @@ package com.heypixel.heypixelmod.mixin.O;
 import com.heypixel.heypixelmod.obsoverlay.Naven;
 import com.heypixel.heypixelmod.obsoverlay.events.api.types.EventType;
 import com.heypixel.heypixelmod.obsoverlay.events.impl.EventRenderTabOverlay;
+import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.DynamicIslandHud;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.PlayerTabOverlay;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.Scoreboard;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
@@ -20,6 +26,18 @@ import java.util.List;
 public abstract class MixinPlayerTabOverlay {
     @Shadow
     public abstract Component getNameForDisplay(PlayerInfo var1);
+
+    @Inject(
+            method = {"render"},
+            at = {@At("HEAD")},
+            cancellable = true
+    )
+    private void cancelRender(GuiGraphics guiGraphics, int tickCount, Scoreboard scoreboard, Objective objective, CallbackInfo ci) {
+        DynamicIslandHud module = Naven.getInstance().getModuleManager().getModule(DynamicIslandHud.class);
+        if (module != null && module.isEnabled()) {
+            ci.cancel();
+        }
+    }
 
     @Redirect(
             method = {"render"},

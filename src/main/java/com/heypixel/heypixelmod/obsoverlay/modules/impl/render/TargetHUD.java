@@ -15,6 +15,7 @@ import com.heypixel.heypixelmod.obsoverlay.utils.auth.AuthUtils;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.Skia;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.font.Fonts;
 import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
+import com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.DragValue;
 import io.github.humbleui.skija.ClipMode;
 import io.github.humbleui.skija.Font;
@@ -36,11 +37,16 @@ import java.awt.*;
 public class TargetHUD extends Module {
     private final SmoothAnimationTimer heal = new SmoothAnimationTimer(20.0F);
     private final SmoothAnimationTimer alpha = new SmoothAnimationTimer(255.0F);
+    private final SmoothAnimationTimer hurtAlpha = new SmoothAnimationTimer(0.0F);
     private final DragValue dragValue = ValueBuilder.create(this, "Position")
             .setDefaultX(500f)
             .setDefaultY(200f)
             .build()
             .getDragValue();
+    private final BooleanValue hurt = ValueBuilder.create(this, "Hurt")
+            .setDefaultBooleanValue(true)
+            .build()
+            .getBooleanValue();
     private AbstractClientPlayer target;
 
     @EventTarget
@@ -52,6 +58,7 @@ public class TargetHUD extends Module {
         alpha.update(true);
         if (alpha.value < 1.0f) return;
         heal.update(true);
+        hurtAlpha.update(true);
         float x = dragValue.getX();
         float y = dragValue.getY();
         float width = 125.0f;
@@ -72,6 +79,9 @@ public class TargetHUD extends Module {
             Skia.drawRoundedBlur(x, y, width, height, 6.0f);
             Skia.drawRoundedRect(x, y, width, height, 6.0f, new Color(0, 0, 0, 100));
             Skia.drawPlayerHead(target, x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f);
+            if (hurtAlpha.value > 1.0f) {
+                Skia.drawRoundedRect(x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f, new Color(255, 80, 80, (int) hurtAlpha.value));
+            }
             Path path = new Path();
             path.addRRect(RRect.makeXYWH(x + 40.0f, y + 30.5f, healBarWidth, 5.0f, 3.0f));
             Skia.save();
@@ -98,12 +108,15 @@ public class TargetHUD extends Module {
             alpha.target = 255.0f;
             target = player;
             heal.target = player.getHealth();
+            hurtAlpha.target = hurt.getCurrentValue() && player.hurtTime > 0 ? 120.0f : 0.0f;
         } else if (module.isEnabled() && module.target instanceof AbstractClientPlayer player) {
             alpha.target = 255.0f;
             target = player;
             heal.target = player.getHealth();
+            hurtAlpha.target = hurt.getCurrentValue() && player.hurtTime > 0 ? 120.0f : 0.0f;
         } else {
             alpha.target = 0.0f;
+            hurtAlpha.target = 0.0f;
         }
     }
 }

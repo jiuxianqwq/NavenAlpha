@@ -47,6 +47,14 @@ public class NameTags extends Module {
             .setMaxFloatValue(1.0F)
             .build()
             .getFloatValue();
+    public com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue blur = ValueBuilder.create(this, "Blur")
+            .setDefaultBooleanValue(true)
+            .build()
+            .getBooleanValue();
+    public com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue bloom = ValueBuilder.create(this, "Bloom")
+            .setDefaultBooleanValue(true)
+            .build()
+            .getBooleanValue();
 
     private static final float BASE_SCALE = 10.0f;
     private static final float DISTANCE_CLAMP_MIN = 8.0f;
@@ -132,6 +140,12 @@ public class NameTags extends Module {
     }
 
     private void renderSegment(float x, float y, float width, float height, float radius, float padding, float iconGap, String text, Font font, Color textColor, String icon, Font iconFont) {
+        if (bloom.getCurrentValue()) {
+            Skia.drawShadow(x, y, width, height, radius);
+        }
+        if (blur.getCurrentValue()) {
+            Skia.drawRoundedBlur(x, y, width, height, radius);
+        }
         Skia.drawRoundedRect(x, y, width, height, radius, BACKGROUND_COLOR);
 
         float textY = y + (height / 2.0f) - (font.getMetrics().getCapHeight() / 2.0f);

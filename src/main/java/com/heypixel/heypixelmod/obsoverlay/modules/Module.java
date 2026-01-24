@@ -2,6 +2,7 @@ package com.heypixel.heypixelmod.obsoverlay.modules;
 
 import com.heypixel.heypixelmod.obsoverlay.Naven;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.ClickGUIModule;
+import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.DynamicIslandHud;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.HUD;
 import com.heypixel.heypixelmod.obsoverlay.ui.notification.Notification;
 import com.heypixel.heypixelmod.obsoverlay.ui.notification.NotificationLevel;
@@ -144,6 +145,7 @@ public class Module extends HasValue {
                 this.enabled = true;
                 naven.getEventManager().register(this);
                 this.onEnable();
+                DynamicIslandHud.onModuleToggle(this, true);
                 if (!(this instanceof ClickGUIModule)) {
                     HUD module = Naven.getInstance().getModuleManager().getModule(HUD.class);
                     if (module.moduleToggleSound.getCurrentValue()) {
@@ -157,6 +159,7 @@ public class Module extends HasValue {
                 this.enabled = false;
                 naven.getEventManager().unregister(this);
                 this.onDisable();
+                DynamicIslandHud.onModuleToggle(this, false);
                 if (!(this instanceof ClickGUIModule)) {
                     HUD module = Naven.getInstance().getModuleManager().getModule(HUD.class);
                     if (module.moduleToggleSound.getCurrentValue()) {

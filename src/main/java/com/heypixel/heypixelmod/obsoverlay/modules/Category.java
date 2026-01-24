@@ -3,9 +3,7 @@ package com.heypixel.heypixelmod.obsoverlay.modules;
 import com.heypixel.heypixelmod.obsoverlay.Naven;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.ClickGUIModule;
 import com.heypixel.heypixelmod.obsoverlay.utils.FontIcons;
-import lombok.Getter;
 
-@Getter
 public enum Category {
     COMBAT("Combat", "战斗", FontIcons.SWORD),
     MOVEMENT("Movement", "移动", FontIcons.RUNNING),
@@ -32,4 +30,7 @@ public enum Category {
         return module.lang.getCurrentMode().equals("English") ? this.displayName : this.cnName;
     }
 
+    public String getIcon() {
+        return this.icon;
+    }
 }

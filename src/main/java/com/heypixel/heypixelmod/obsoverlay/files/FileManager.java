@@ -6,10 +6,12 @@ import com.heypixel.heypixelmod.obsoverlay.Naven;
 import com.heypixel.heypixelmod.obsoverlay.files.Config.ModuleData;
 import com.heypixel.heypixelmod.obsoverlay.modules.Module;
 import com.heypixel.heypixelmod.obsoverlay.modules.ModuleManager;
+import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.Scoreboard;
 import com.heypixel.heypixelmod.obsoverlay.ui.ClickGUI;
 import com.heypixel.heypixelmod.obsoverlay.utils.FriendManager;
 import com.heypixel.heypixelmod.obsoverlay.utils.auth.AuthUtils;
 import com.heypixel.heypixelmod.obsoverlay.values.Value;
+import com.heypixel.heypixelmod.obsoverlay.values.ValueType;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.DragValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.ModeValue;
 import org.apache.logging.log4j.LogManager;
@@ -147,6 +149,12 @@ public class FileManager {
 
                 for (Map.Entry<String, Object> valEntry : data.values.entrySet()) {
                     Value value = Naven.getInstance().getValueManager().getValue(module, valEntry.getKey());
+                    if (value == null && "Scoreboard".equals(module.getEnName()) && "ArrayList Font".equals(valEntry.getKey())) {
+                        value = Naven.getInstance().getValueManager().getValue(module, "Font");
+                    }
+                    if (value != null && module instanceof Scoreboard && value.getValueType() == ValueType.DRAG) {
+                        continue;
+                    }
                     if (value != null) {
                         applyValue(value, valEntry.getValue());
                     }
@@ -268,10 +276,12 @@ public class FileManager {
                             data.values.put(value.getName(), value.getModeValue().getCurrentValue());
                             break;
                         case DRAG:
-                            Map<String, Float> dragData = new HashMap<>();
-                            dragData.put("x", value.getDragValue().getX());
-                            dragData.put("y", value.getDragValue().getY());
-                            data.values.put(value.getName(), dragData);
+                            if (!(module instanceof Scoreboard)) {
+                                Map<String, Float> dragData = new HashMap<>();
+                                dragData.put("x", value.getDragValue().getX());
+                                dragData.put("y", value.getDragValue().getY());
+                                data.values.put(value.getName(), dragData);
+                            }
                             break;
                     }
                 }

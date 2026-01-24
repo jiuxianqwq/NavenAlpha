@@ -285,8 +285,11 @@ public class Skia {
 
     public static void drawPlayerHead(AbstractClientPlayer player, float x, float y, float width, float height, float radius) {
         if (player == null) return;
+        drawPlayerHead(player.getSkinTextureLocation(), x, y, width, height, radius);
+    }
 
-        ResourceLocation skinLoc = player.getSkinTextureLocation();
+    public static void drawPlayerHead(ResourceLocation skinLoc, float x, float y, float width, float height, float radius) {
+        if (skinLoc == null) return;
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(skinLoc);
         texture.bind();
         int textureId = texture.getId();

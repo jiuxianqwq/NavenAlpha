@@ -103,6 +103,17 @@ public class InventoryUtils {
         return -1;
     }
 
+    public static Integer findItemHotbar(Item item) {
+        for (int i = 0; i < 9; i++) {
+            ItemStack itemStack = mc.player.getInventory().items.get(i);
+            if (itemStack.getItem() == item) {
+                return i;
+            }
+        }
+
+        return null;
+    }
+
     public static int getPunchLevel(ItemStack stack) {
         return EnchantmentHelper.getItemEnchantmentLevel(Enchantments.PUNCH_ARROWS, stack);
     }

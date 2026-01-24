@@ -7,27 +7,20 @@ import com.heypixel.heypixelmod.obsoverlay.modules.Category;
 import com.heypixel.heypixelmod.obsoverlay.modules.Module;
 import com.heypixel.heypixelmod.obsoverlay.modules.ModuleInfo;
 import com.heypixel.heypixelmod.obsoverlay.modules.ModuleManager;
-import com.heypixel.heypixelmod.obsoverlay.utils.RenderUtils;
 import com.heypixel.heypixelmod.obsoverlay.utils.SmoothAnimationTimer;
 import com.heypixel.heypixelmod.obsoverlay.utils.renderer.ColorUtil;
-import com.heypixel.heypixelmod.obsoverlay.utils.shader.impl.KawaseBlur;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.Skia;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.font.Fonts;
 import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.DragValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.FloatValue;
-import com.mojang.blaze3d.platform.Window;
-import io.github.humbleui.skija.*;
 import io.github.humbleui.skija.Font;
-import io.github.humbleui.skija.Paint;
-import io.github.humbleui.types.RRect;
-import io.github.humbleui.types.Rect;
-import net.minecraft.client.Minecraft;
-import org.joml.Vector4f;
 
 import java.awt.Color;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Author：jiuxian_baka
@@ -72,10 +65,8 @@ public class ArrayListModule extends Module {
             .build()
             .getFloatValue();
     List<Module> renderModules;
-    List<Vector4f> blurMatrices = new java.util.ArrayList<>();
-    private final Paint listPaint = new Paint();
-    private final Path blurPath = new Path();
-    private final Paint blurPaint = new Paint();
+    private final Map<Module, SmoothAnimationTimer> xTimers = new HashMap<>();
+    private final Map<Module, SmoothAnimationTimer> yTimers = new HashMap<>();
 
     private static final Color BACKGROUND_COLOR = new Color(0, 0, 0, 100);
 
@@ -110,98 +101,67 @@ public class ArrayListModule extends Module {
                 : Skia.getStringWidth(this.getModuleDisplayName(this.renderModules.get(0)), miSans) + margen * 3 + iconWidth;
 
         float startY = dragValue.getY();
-            for (Module m : renderModules) {
-                SmoothAnimationTimer animation = m.getAnimation();
-                if (m.isEnabled()) {
-                    animation.target = 100.0F;
-                } else {
-                    animation.target = 0.0F;
-                }
-                animation.update(true);
-
-                if (animation.value == 0.0f) continue;
-                if (m.getCategory() == Category.RENDER && hideRenderModules.getCurrentValue()) continue;
-
-
-                String text = getModuleDisplayName(m);
-                float stringWidth = Skia.getStringWidth(text, miSans);
-                float width = stringWidth + margen * 2;
-                float fullWidth = width + margen + iconWidth;
-                float startX;
-                float iconStartX;
-                if (right) {
-                    startX = dragValue.getX() + maxWidth - fullWidth + (fullWidth * ((100 - animation.value) / 100.0f));
-                    iconStartX = startX + width + margen;
-                } else {
-                    startX = dragValue.getX() - (fullWidth * ((100 - animation.value) / 100.0f));
-                    iconStartX = startX + width + margen;
-                }
-
-                Color color = Color.white;
-                if (this.rainbow.getCurrentValue()) {
-                    color = ColorUtil.interpolateColorsBackAndForth((int)this.rainbowSpeed.getCurrentValue(), (int)-startY, HUD.getColor1(), HUD.getColor2(), false);
-                }
-
-                listPaint.reset();
-                listPaint.setAlpha((int) (255 * (animation.value / 100.0f)));
-                Skia.getCanvas().saveLayer(Rect.makeXYWH(startX, startY, fullWidth, height), listPaint);
-                if (animation.value >= 75) blurMatrices.add(new Vector4f(startX, startY, width, height));
-                Skia.drawRoundedRect(startX, startY, width, height, margen, BACKGROUND_COLOR);
-                Skia.drawText(text, startX + margen, startY + margen, color, miSans);
-
-                if (animation.value >= 75) blurMatrices.add(new Vector4f(iconStartX, startY, iconWidth, height));
-                Skia.drawRoundedRect(iconStartX, startY, iconWidth, height, margen, BACKGROUND_COLOR);
-                Skia.drawText(m.getCategory().getIcon(), iconStartX + margen, startY + margen, Color.WHITE, icon);
-
-                Skia.restore();
-                startY += (height + margen) * (animation.value / 100.0f);
+        for (Module m : renderModules) {
+            if (m.getCategory() == Category.RENDER && hideRenderModules.getCurrentValue()) {
+                continue;
             }
+
+            String text = getModuleDisplayName(m);
+            float stringWidth = Skia.getStringWidth(text, miSans);
+            float width = stringWidth + margen * 2;
+            float fullWidth = width + margen + iconWidth;
+            float targetX = right ? dragValue.getX() + maxWidth - fullWidth : dragValue.getX();
+            float offscreenX = right ? dragValue.getX() + maxWidth + fullWidth : dragValue.getX() - fullWidth - margen;
+
+            SmoothAnimationTimer xTimer = xTimers.get(m);
+            if (xTimer == null) {
+                xTimer = new SmoothAnimationTimer(offscreenX, offscreenX, 0.2F);
+                xTimers.put(m, xTimer);
+            }
+            SmoothAnimationTimer yTimer = yTimers.get(m);
+            if (yTimer == null) {
+                yTimer = new SmoothAnimationTimer(startY, startY, 0.2F);
+                yTimers.put(m, yTimer);
+            }
+
+            xTimer.target = m.isEnabled() ? targetX : offscreenX;
+            xTimer.update(true);
+            if (m.isEnabled()) {
+                yTimer.target = startY;
+                yTimer.update(true);
+                startY += height + margen;
+            } else {
+                yTimer.target = yTimer.value;
+                yTimer.update(true);
+            }
+
+            if (!m.isEnabled() && xTimer.isAnimationDone(true)) {
+                continue;
+            }
+
+            float startX = xTimer.value;
+            float renderY = yTimer.value;
+            float iconStartX = startX + width + margen;
+
+            Color color = Color.white;
+            if (this.rainbow.getCurrentValue()) {
+                color = ColorUtil.interpolateColorsBackAndForth((int) this.rainbowSpeed.getCurrentValue(), (int) -renderY, HUD.getColor1(), HUD.getColor2(), false);
+            }
+
+            Skia.drawShadow(startX, renderY, width, height, margen);
+            Skia.drawRoundedBlur(startX, renderY, width, height, margen);
+            Skia.drawRoundedRect(startX, renderY, width, height, margen, BACKGROUND_COLOR);
+            Skia.drawText(text, startX + margen, renderY + margen, color, miSans);
+
+            Skia.drawShadow(iconStartX, renderY, iconWidth, height, margen);
+            Skia.drawRoundedBlur(iconStartX, renderY, iconWidth, height, margen);
+            Skia.drawRoundedRect(iconStartX, renderY, iconWidth, height, margen, BACKGROUND_COLOR);
+            Skia.drawText(m.getCategory().getIcon(), iconStartX + margen, renderY + margen, Color.WHITE, icon);
+        }
 
         dragValue.setWidth(maxWidth);
         dragValue.setHeight(startY);
 
-    }
-
-    @EventTarget(1)
-    public void onShader(EventRenderSkia event) {
-        float margen = arrayListSize.getCurrentValue() / 4.0f;
-        blurPath.reset();
-        for (Vector4f blurMatrix : blurMatrices) {
-            blurPath.addRRect(RRect.makeXYWH(blurMatrix.x(), blurMatrix.y(), blurMatrix.z(), blurMatrix.w(), margen));
-        }
-        blurPaint.reset();
-        blurPaint.setImageFilter(ImageFilter.makeBlur(2.5F, 2.5F, FilterTileMode.DECAL));
-
-        Skia.save();
-
-        Skia.clipPath(blurPath, ClipMode.DIFFERENCE, true);
-
-        for (Vector4f blurMatrix : this.blurMatrices) {
-
-            Color color = Color.white;
-            if (this.rainbow.getCurrentValue()) {
-                color = ColorUtil.interpolateColorsBackAndForth((int)this.rainbowSpeed.getCurrentValue(), (int)-blurMatrix.y, HUD.getColor1(), HUD.getColor2(), false);
-
-            }
-
-            blurPaint.setColor(color.getRGB());
-
-            Skia.getCanvas().drawRRect(
-                    RRect.makeXYWH(blurMatrix.x(), blurMatrix.y(), blurMatrix.z(), blurMatrix.w(), margen),
-                    blurPaint
-            );
-
-        }
-
-        Skia.restore();
-//
-        Skia.save();
-        Skia.getCanvas().clipPath(blurPath, ClipMode.INTERSECT, true);
-        Window window = Minecraft.getInstance().getWindow();
-        Skia.drawImage(KawaseBlur.INGAME_BLUR.getTexture(), 0, 0, window.getWidth() / (float) window.getGuiScale(), window.getHeight() / (float) window.getGuiScale(), 1F,
-                SurfaceOrigin.BOTTOM_LEFT);
-        Skia.restore();
-        blurMatrices.clear();
     }
 
     public String getModuleDisplayName(Module module) {

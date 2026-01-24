@@ -20,6 +20,7 @@ import com.heypixel.heypixelmod.obsoverlay.utils.rotation.Rotation;
 import com.heypixel.heypixelmod.obsoverlay.utils.rotation.RotationManager;
 import com.heypixel.heypixelmod.obsoverlay.utils.rotation.RotationUtils;
 import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
+import com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.FloatValue;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.InteractionHand;
@@ -53,11 +54,16 @@ public class KillAura extends Module {
             .setMaxFloatValue(6.0F)
             .build()
             .getFloatValue();
+    BooleanValue mode19 = ValueBuilder.create(this, "1.9 Mode")
+            .setDefaultBooleanValue(false)
+            .build()
+            .getBooleanValue();
     FloatValue cps = ValueBuilder.create(this, "CPS")
             .setDefaultFloatValue(10.0F)
             .setFloatStep(1.0F)
             .setMinFloatValue(1.0F)
             .setMaxFloatValue(20.0F)
+            .setVisibility(() -> !mode19.getCurrentValue())
             .build()
             .getFloatValue();
     FloatValue rotateSpeed = ValueBuilder.create(this, "Rotation Speed")
@@ -93,6 +99,13 @@ public class KillAura extends Module {
     }
 
     private void attackTarget() {
+        if (mode19.getCurrentValue()) {
+            if (mc.player.getAttackStrengthScale(0.0F) >= 1.0F) {
+                mc.gameMode.attack(mc.player, target);
+                mc.player.swing(InteractionHand.MAIN_HAND);
+            }
+            return;
+        }
         long time = System.currentTimeMillis();
         double baseDelay = 1000.0 / cps.getCurrentValue();
 
@@ -141,6 +154,10 @@ public class KillAura extends Module {
         }
 
         this.setSuffix(candidates.size() + " Targets");
+    }
+
+    public List<Entity> getTargets() {
+        return targets;
     }
 
     @EventTarget

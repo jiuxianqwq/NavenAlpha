@@ -9,6 +9,8 @@
     "CapabilityTrackerMixin",
     "MixinAbstractClientPlayer",
     "MixinCamera",
+    "MixinChatComponent",
+    "MixinChatScreen",
     "MixinClientHandshakePacketListenerImpl",
     "MixinClientLevel",
     "MixinClientPacketListener",
