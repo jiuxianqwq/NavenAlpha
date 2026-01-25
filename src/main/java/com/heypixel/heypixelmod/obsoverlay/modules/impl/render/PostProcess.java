@@ -22,11 +22,17 @@ import org.lwjgl.opengl.GL11;
 public class PostProcess extends Module {
     private static PostProcess instance;
 
+    private final BooleanValue fastBlur = ValueBuilder.create(this, "FastBlur")
+            .setDefaultBooleanValue(false)
+            .build()
+            .getBooleanValue();
+
     private final FloatValue blurFPS = ValueBuilder.create(this, "Blur FPS")
             .setFloatStep(1.0F)
             .setDefaultFloatValue(90.0F)
             .setMinFloatValue(15.0F)
             .setMaxFloatValue(120.0F)
+            .setVisibility(fastBlur::getCurrentValue)
             .build()
             .getFloatValue();
     private final FloatValue strength = ValueBuilder.create(this, "Blur Strength")
@@ -58,7 +64,11 @@ public class PostProcess extends Module {
     public int getBlurFPS() {
         return (int) blurFPS.getCurrentValue();
     }
-    
+
+    public boolean getFastBlur() {
+        return fastBlur.getCurrentValue();
+    }
+
     public static boolean isGlowEnabled() {
         return instance != null && instance.glow.getCurrentValue();
     }

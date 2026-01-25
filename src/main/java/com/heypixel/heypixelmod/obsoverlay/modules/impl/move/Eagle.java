@@ -72,19 +72,20 @@ public class Eagle extends Module {
 
     @EventTarget
     public void onMoveInput(EventMoveInput event) {
-        canFast = false;
         LocalPlayer player = mc.player;
         if (player == null) return;
 
         if (event.getForward() != 0) this.forward = event.getForward();
 
         if (backwards.getCurrentValue() && forward > 0) {
+            canFast = false;
             return;
         }
 
         if (onlyWithBlocks.getCurrentValue() &&
                 (mc.player.getMainHandItem().isEmpty() ||
                         !(mc.player.getMainHandItem().getItem() instanceof BlockItem))) {
+            canFast = false;
             return;
         }
         canFast = true;

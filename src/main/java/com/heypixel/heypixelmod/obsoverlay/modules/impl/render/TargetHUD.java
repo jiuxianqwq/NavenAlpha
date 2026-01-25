@@ -79,9 +79,9 @@ public class TargetHUD extends Module {
             Skia.drawRoundedBlur(x, y, width, height, 6.0f);
             Skia.drawRoundedRect(x, y, width, height, 6.0f, new Color(0, 0, 0, 100));
             Skia.drawPlayerHead(target, x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f);
-            if (hurtAlpha.value > 1.0f) {
-                Skia.drawRoundedRect(x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f, new Color(255, 80, 80, (int) hurtAlpha.value));
-            }
+//            if (hurtAlpha.value > 1.0f) {
+//                Skia.drawRoundedRect(x + 5.0f, y + 5.0f, 30.0f, 30.0f, 4.0f, new Color(255, 80, 80, (int) hurtAlpha.value));
+//            }
             Path path = new Path();
             path.addRRect(RRect.makeXYWH(x + 40.0f, y + 30.5f, healBarWidth, 5.0f, 3.0f));
             Skia.save();

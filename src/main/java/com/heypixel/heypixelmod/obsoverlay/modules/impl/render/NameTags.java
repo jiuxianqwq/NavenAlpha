@@ -85,13 +85,11 @@ public class NameTags extends Module {
 
                 Vector2f position = entry.getValue();
 
-                double distance = mc.player.distanceTo(living);
-                float currentScale = computeScale(distance);
 
-                float padding = 6.0f * currentScale;
-                float radius = 6.0f * currentScale;
-                float spacing = 4.0f * currentScale;
-                float iconGap = 3.0f * currentScale;
+                float padding = 6.0f * scale.getCurrentValue();
+                float radius = 6.0f * scale.getCurrentValue();
+                float spacing = 4.0f * scale.getCurrentValue();
+                float iconGap = 3.0f * scale.getCurrentValue();
 
                 statusParts.clear();
                 if (Teams.isSameTeam(living)) statusParts.add("§aTeam");
@@ -104,7 +102,7 @@ public class NameTags extends Module {
                     healthText += "+" + Math.round(living.getAbsorptionAmount());
                 }
 
-                float baseFontSize = 14f * currentScale;
+                float baseFontSize = 14f * scale.getCurrentValue();
                 Font font = Fonts.getMiSans(baseFontSize);
                 Font iconFont = Fonts.getIconFill(baseFontSize);
 

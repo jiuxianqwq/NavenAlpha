@@ -46,7 +46,7 @@ public class TargetESP extends Module {
             .build()
             .getModeValue();
     private final ModeValue image = ValueBuilder.create(this, "Image")
-            .setModes("YUZHE", "lixianyu", "Lidan")
+            .setModes("于哲", "于思礼", "李丹")
             .setDefaultModeIndex(0)
             .setVisibility(() -> mode.isCurrentMode("Face"))
             .build()
@@ -100,15 +100,15 @@ public class TargetESP extends Module {
         alpha.target = hurt.getCurrentValue() && player.hurtTime > 0 ? 120.0f : 0.0f;
         alpha.update(true);
         if (alpha.value > 1.0f) {
-            Skia.drawRoundedRect(drawX, drawY, drawSize, drawSize, 0.0f, new Color(255, 80, 80, (int) alpha.value));
+            Skia.drawRoundedRect(drawX, drawY, drawSize, drawSize, 0.0f, new Color(255, 0, 0, (int) alpha.value));
         }
     }
 
     private String getFaceImagePath() {
-        if (image.isCurrentMode("lixianyu")) {
+        if (image.isCurrentMode("于思礼")) {
             return "yuzhe/ysl.png";
         }
-        if (image.isCurrentMode("Lidan")) {
+        if (image.isCurrentMode("李丹")) {
             return "yuzhe/lidan.png";
         }
         return "yuzhe/yuzhe.jpg";

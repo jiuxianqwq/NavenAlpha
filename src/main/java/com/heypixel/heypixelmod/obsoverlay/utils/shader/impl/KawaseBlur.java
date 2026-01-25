@@ -57,10 +57,12 @@ public class KawaseBlur {
         }
 
 
-        if (timer.delay(1000 / Naven.getInstance().getModuleManager().getModule(PostProcess.class).getBlurFPS())) {
-            timer.reset();
-        } else {
-            return;
+        if (Naven.getInstance().getModuleManager().getModule(PostProcess.class).getFastBlur()) {
+            if (timer.delay(1000 / Naven.getInstance().getModuleManager().getModule(PostProcess.class).getBlurFPS())) {
+                timer.reset();
+            } else {
+                return;
+            }
         }
 
         IntDoubleImmutablePair strength = STRENGTHS[(radius - 1)];
