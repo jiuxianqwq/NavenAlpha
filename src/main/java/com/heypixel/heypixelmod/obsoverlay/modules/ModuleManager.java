@@ -69,7 +69,7 @@ public class ModuleManager {
                 new Teams(),
                 new Glow(),
                 new ItemTracker(),
-                new AutoMLG(),
+//                new AutoMLG(),
                 new ClientFriend(),
                 new NoJumpDelay(),
                 new FastPlace(),
