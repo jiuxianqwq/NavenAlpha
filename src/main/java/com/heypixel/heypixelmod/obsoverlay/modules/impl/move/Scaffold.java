@@ -125,11 +125,6 @@ public class Scaffold extends Module {
             .setVisibility(telly::getCurrentValue)
             .build()
             .getFloatValue();
-    BooleanValue hypixelSameY = ValueBuilder.create(this, "Hypixel SameY")
-            .setDefaultBooleanValue(false)
-            .setVisibility(telly::getCurrentValue)
-            .build()
-            .getBooleanValue();
     BooleanValue safeWalk = ValueBuilder.create(this, "SafeWalk").setDefaultBooleanValue(true)
             .setVisibility(() -> !telly.getCurrentValue())
             .build()
@@ -139,8 +134,6 @@ public class Scaffold extends Module {
     private BlockPos blockPos;
     private Direction enumFacing;
     private int oldSlot = -1;
-    private int startY;
-    private int jumps = 2;
 
     public static Vec3 getVec3(BlockPos pos, Direction face) {
         double x = (double) pos.getX() + 0.5;
@@ -207,15 +200,7 @@ public class Scaffold extends Module {
         if (slotID != -1 && mc.player.getInventory().selected != slotID) {
             mc.player.getInventory().selected = slotID;
         }
-        if (mc.player.onGround()) {
-            yLevel = (int) Math.floor(mc.player.getY()) - 1;
-            startY = (int) Math.floor(mc.player.getY());
-            jumps++;
-        }
-        if (mc.options.keyJump.isDown()) {
-            startY = (int) Math.floor(mc.player.getY());
-            jumps = 2;
-        }
+        if (mc.player.onGround()) yLevel = (int) Math.floor(mc.player.getY()) - 1;
         getBlockInfo();
         if (telly.getCurrentValue()) {
             if (mc.player.onGround()) {
@@ -264,13 +249,6 @@ public class Scaffold extends Module {
     }
 
     public int getYLevel() {
-        if (telly.getCurrentValue() && hypixelSameY.getCurrentValue()) {
-            if (mc.player.getDeltaMovement().y == -0.15233518685055708 && jumps >= 2) {
-                jumps = 0;
-                return startY;
-            }
-            return startY - 1;
-        }
         if (!mc.options.keyJump.isDown() && MoveUtils.isMoving() && mc.player.fallDistance <= 0.25 && telly.getCurrentValue()) {
             return yLevel;
         } else {
