@@ -20,6 +20,12 @@ public class ClickGUIModule extends Module {
             .setOnUpdate(value -> Module.update = true)
             .build()
             .getModeValue();
+    public ModeValue style = ValueBuilder
+            .create(this, "Style")
+            .setModes("Naven")
+            .setOnUpdate(value -> Module.update = true)
+            .build()
+            .getModeValue();
     ClickGUI clickGUI = null;
 
     @Override

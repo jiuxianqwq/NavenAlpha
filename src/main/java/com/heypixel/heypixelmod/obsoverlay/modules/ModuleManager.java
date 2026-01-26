@@ -53,6 +53,7 @@ public class ModuleManager {
     private void initModules() {
         this.registerModule(
                 new KillAura(),
+                new LagRange(),
                 new HUD(),
                 new DynamicIslandHud(),
                 new Velocity(),

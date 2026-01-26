@@ -68,6 +68,7 @@ public class ArrayListModule extends Module {
     private boolean lastTopHalf = true;
     private final Map<Module, SmoothAnimationTimer> xTimers = new HashMap<>();
     private final Map<Module, SmoothAnimationTimer> yTimers = new HashMap<>();
+    private final SmoothAnimationTimer maxWidthTimer = new SmoothAnimationTimer(0.0F, 0.0F, 0.2F);
 
     private static final Color BACKGROUND_COLOR = new Color(0, 0, 0, 100);
 
@@ -99,9 +100,37 @@ public class ArrayListModule extends Module {
         float iconWidth = height;
         float margen = arrayListSize.getCurrentValue() / 4.0f;
 
-        float maxWidth = this.renderModules.isEmpty()
-                ? 0.0F
-                : Skia.getStringWidth(this.getModuleDisplayName(this.renderModules.get(0)), miSans) + margen * 3 + iconWidth;
+        float targetMaxWidth = 0.0F;
+        float realMaxWidth = 0.0F;
+        for (Module m : renderModules) {
+            if (m.getCategory() == Category.RENDER && hideRenderModules.getCurrentValue()) {
+                continue;
+            }
+            if (!m.isEnabled()) {
+                continue;
+            }
+            String text = getModuleDisplayName(m);
+            String stableText = this.prettyModuleName.getCurrentValue() ? m.getPrettyName() : m.getName();
+            
+            float stringWidth = Skia.getStringWidth(text, miSans);
+            float stableStringWidth = Skia.getStringWidth(stableText, miSans);
+            
+            float width = stringWidth + margen * 2;
+            float stableWidth = stableStringWidth + margen * 2;
+            
+            float fullWidth = width + margen + iconWidth;
+            float fullStableWidth = stableWidth + margen + iconWidth;
+            
+            if (fullStableWidth > targetMaxWidth) {
+                targetMaxWidth = fullStableWidth;
+            }
+            if (fullWidth > realMaxWidth) {
+                realMaxWidth = fullWidth;
+            }
+        }
+        maxWidthTimer.target = targetMaxWidth;
+        maxWidthTimer.update(true);
+        float maxWidth = maxWidthTimer.value;
 
         float startY = dragValue.getY();
         for (Module m : renderModules) {
@@ -162,8 +191,8 @@ public class ArrayListModule extends Module {
             Skia.drawText(m.getCategory().getIcon(), iconStartX + margen, renderY + margen, Color.WHITE, icon);
         }
 
-        dragValue.setWidth(maxWidth);
-        dragValue.setHeight(startY);
+        dragValue.setWidth(realMaxWidth);
+        dragValue.setHeight(startY - dragValue.getY());
 
     }
 

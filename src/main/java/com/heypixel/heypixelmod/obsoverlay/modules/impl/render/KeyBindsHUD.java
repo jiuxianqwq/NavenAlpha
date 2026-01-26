@@ -64,26 +64,33 @@ public class KeyBindsHUD extends Module {
     }
 
     private void renderStyleB() {
-        Font font = Fonts.getMiSans(size.getCurrentValue());
-        Font iconFont = Fonts.getIconFill(size.getCurrentValue());
+        float headerSize = size.getCurrentValue() * 1.0f;
+        float contentSize = size.getCurrentValue() * 0.9f;
+        Font headerFont = Fonts.getMiSans(headerSize);
+        Font headerIconFont = Fonts.getIconFill(headerSize);
+        Font contentFont = Fonts.getMiSans(contentSize);
         List<Module> modules = new ArrayList<>(Naven.getInstance().getModuleManager().getModules());
         boolean inEditor = mc.screen instanceof HUDEditor;
-        float height = size.getCurrentValue() * 1.5f;
+        float headerHeight = headerSize * 1.5f;
+        float itemHeight = contentSize * 1.5f;
         float margin = size.getCurrentValue() / 3.0f;
+        float headerGap = margin * 0.6f;
+        float radius = margin * 2.0f;
+        Color backgroundColor = new Color(0, 0, 0, 70);
 
         boolean topHalf = dragValue.getY() < mc.getWindow().getGuiScaledHeight() / 2.0f;
         modules.sort((m1, m2) -> {
             float width1 = 0;
             if (m1 != this && m1.getKey() != 0) {
-                float nameW = Skia.getStringWidth(m1.getName(), font);
-                float keyW = Skia.getStringWidth(getKeyName(m1.getKey()), font) + margin * 2.0f;
+                float nameW = Skia.getStringWidth(m1.getName(), contentFont);
+                float keyW = Skia.getStringWidth(getKeyName(m1.getKey()), contentFont) + margin * 2.0f;
                 width1 = nameW + margin * 2.0f + margin + keyW;
             }
 
             float width2 = 0;
             if (m2 != this && m2.getKey() != 0) {
-                float nameW = Skia.getStringWidth(m2.getName(), font);
-                float keyW = Skia.getStringWidth(getKeyName(m2.getKey()), font) + margin * 2.0f;
+                float nameW = Skia.getStringWidth(m2.getName(), contentFont);
+                float keyW = Skia.getStringWidth(getKeyName(m2.getKey()), contentFont) + margin * 2.0f;
                 width2 = nameW + margin * 2.0f + margin + keyW;
             }
 
@@ -101,15 +108,15 @@ public class KeyBindsHUD extends Module {
 
         // Calculate target dimensions
         String headerText = "Key Bind";
-        float headerTextWidth = Skia.getStringWidth(headerText, font);
-        float headerIconWidth = Skia.getStringWidth(Icon.KEYBOARD, iconFont);
+        float headerTextWidth = Skia.getStringWidth(headerText, headerFont);
+        float headerIconWidth = Skia.getStringWidth(Icon.KEYBOARD, headerIconFont);
         float maxContentWidth = headerTextWidth + margin * 4.0f + headerIconWidth;
 
         for (Module module : visibleModules) {
             String name = module.getName();
             String keyName = getKeyName(module.getKey());
-            float nameW = Skia.getStringWidth(name, font);
-            float keyW = Skia.getStringWidth(keyName, font);
+            float nameW = Skia.getStringWidth(name, contentFont);
+            float keyW = Skia.getStringWidth(keyName, contentFont);
             float contentW = nameW + margin * 4.0f + keyW;
             if (contentW > maxContentWidth) {
                 maxContentWidth = contentW;
@@ -117,7 +124,7 @@ public class KeyBindsHUD extends Module {
         }
 
         float targetContainerWidth = maxContentWidth + margin * 2.0f;
-        float targetContainerHeight = height + (visibleModules.size() * height) + margin * 2.0f;
+        float targetContainerHeight = headerHeight + headerGap + (visibleModules.size() * itemHeight) + margin * 2.0f;
 
         // Update container timers
         containerWidthTimer.target = targetContainerWidth;
@@ -132,20 +139,20 @@ public class KeyBindsHUD extends Module {
         float startY = dragValue.getY();
 
         // Draw Container Background
-        Skia.drawShadow(startX, startY, currentContainerWidth, currentContainerHeight, margin);
-        Skia.drawRoundedBlur(startX, startY, currentContainerWidth, currentContainerHeight, margin);
-        Skia.drawRoundedRect(startX, startY, currentContainerWidth, currentContainerHeight, margin, BACKGROUND_COLOR);
+        Skia.drawShadow(startX, startY, currentContainerWidth, currentContainerHeight, radius);
+        Skia.drawRoundedBlur(startX, startY, currentContainerWidth, currentContainerHeight, radius);
+        Skia.drawRoundedRect(startX, startY, currentContainerWidth, currentContainerHeight, radius, backgroundColor);
 
         // Clip Content
         io.github.humbleui.skija.Canvas canvas = Skia.getCanvas();
         int saveCount = canvas.save();
-        io.github.humbleui.types.RRect clipRect = io.github.humbleui.types.RRect.makeXYWH(startX, startY, currentContainerWidth, currentContainerHeight, margin);
+        io.github.humbleui.types.RRect clipRect = io.github.humbleui.types.RRect.makeXYWH(startX, startY, currentContainerWidth, currentContainerHeight, radius);
         canvas.clipRRect(clipRect, true);
 
         // Draw Header
-        float headerY = startY + margin + height / 2.0f;
-        Skia.drawHeightCenteredText(headerText, startX + margin, headerY, Color.WHITE, font);
-        Skia.drawHeightCenteredText(Icon.KEYBOARD, startX + currentContainerWidth - margin - headerIconWidth, headerY, Color.WHITE, iconFont);
+        float headerY = startY + margin + headerHeight / 2.0f;
+        Skia.drawHeightCenteredText(headerText, startX + margin, headerY, Color.WHITE, headerFont);
+        Skia.drawHeightCenteredText(Icon.KEYBOARD, startX + currentContainerWidth - margin - headerIconWidth, headerY, Color.WHITE, headerIconFont);
 
         // Draw Items (Iterate all potential modules to handle fade out)
         // We iterate all modules in the original list to catch those that are fading out
@@ -155,10 +162,10 @@ public class KeyBindsHUD extends Module {
         
         // Calculate target Y for visible modules
         Map<Module, Float> targetYMap = new HashMap<>();
-        float currentTargetYOffset = margin + height; // Start after header
+        float currentTargetYOffset = margin + headerHeight + headerGap;
         for (Module module : visibleModules) {
             targetYMap.put(module, currentTargetYOffset);
-            currentTargetYOffset += height;
+            currentTargetYOffset += itemHeight;
         }
 
         for (Module module : modules) {
@@ -185,17 +192,17 @@ public class KeyBindsHUD extends Module {
             if (alphaVal < 1f) continue; // Fully transparent
 
             float itemYOffset = yTimer.value;
-            float itemCenterY = startY + itemYOffset + height / 2.0f;
+            float itemCenterY = startY + itemYOffset + itemHeight / 2.0f;
 
             Color textColor = new Color(255, 255, 255, (int) Math.min(255, Math.max(0, alphaVal)));
 
             String name = module.getName();
             String keyName = getKeyName(module.getKey());
 
-            Skia.drawHeightCenteredText(name, startX + margin, itemCenterY, textColor, font);
+            Skia.drawHeightCenteredText(name, startX + margin, itemCenterY, textColor, contentFont);
 
-            float keyW = Skia.getStringWidth(keyName, font);
-            Skia.drawHeightCenteredText(keyName, startX + currentContainerWidth - margin - keyW, itemCenterY, textColor, font);
+            float keyW = Skia.getStringWidth(keyName, contentFont);
+            Skia.drawHeightCenteredText(keyName, startX + currentContainerWidth - margin - keyW, itemCenterY, textColor, contentFont);
         }
 
         canvas.restoreToCount(saveCount);
@@ -205,26 +212,31 @@ public class KeyBindsHUD extends Module {
     }
 
     private void renderStyleA() {
-        Font font = Fonts.getMiSans(size.getCurrentValue());
-        Font iconFont = Fonts.getIconFill(size.getCurrentValue());
+        float headerSize = size.getCurrentValue() * 1.0f;
+        float contentSize = size.getCurrentValue() * 0.9f;
+        Font headerFont = Fonts.getMiSans(headerSize);
+        Font headerIconFont = Fonts.getIconFill(headerSize);
+        Font contentFont = Fonts.getMiSans(contentSize);
         List<Module> modules = new ArrayList<>(Naven.getInstance().getModuleManager().getModules());
         boolean inEditor = mc.screen instanceof HUDEditor;
-        float height = size.getCurrentValue() * 1.5f;
+        float headerHeight = headerSize * 1.5f;
+        float itemHeight = contentSize * 1.5f;
         float margin = size.getCurrentValue() / 3.0f;
+        float headerGap = margin * 0.6f;
 
         boolean topHalf = dragValue.getY() < mc.getWindow().getGuiScaledHeight() / 2.0f;
         modules.sort((m1, m2) -> {
             float width1 = 0;
             if (m1 != this && m1.getKey() != 0) {
-                float nameW = Skia.getStringWidth(m1.getName(), font);
-                float keyW = Skia.getStringWidth(getKeyName(m1.getKey()), font) + margin * 2.0f;
+                float nameW = Skia.getStringWidth(m1.getName(), contentFont);
+                float keyW = Skia.getStringWidth(getKeyName(m1.getKey()), contentFont) + margin * 2.0f;
                 width1 = nameW + margin * 2.0f + margin + keyW;
             }
             
             float width2 = 0;
             if (m2 != this && m2.getKey() != 0) {
-                float nameW = Skia.getStringWidth(m2.getName(), font);
-                float keyW = Skia.getStringWidth(getKeyName(m2.getKey()), font) + margin * 2.0f;
+                float nameW = Skia.getStringWidth(m2.getName(), contentFont);
+                float keyW = Skia.getStringWidth(getKeyName(m2.getKey()), contentFont) + margin * 2.0f;
                 width2 = nameW + margin * 2.0f + margin + keyW;
             }
             
@@ -232,8 +244,8 @@ public class KeyBindsHUD extends Module {
         });
 
         String headerText = "Key Binds";
-        float headerTextWidth = Skia.getStringWidth(headerText, font);
-        float headerIconWidth = Skia.getStringWidth(Icon.KEYBOARD, iconFont);
+        float headerTextWidth = Skia.getStringWidth(headerText, headerFont);
+        float headerIconWidth = Skia.getStringWidth(Icon.KEYBOARD, headerIconFont);
         float headerWidth = headerIconWidth + margin + headerTextWidth + margin * 2.0f;
         float maxWidth = headerWidth;
         for (Module module : modules) {
@@ -246,8 +258,8 @@ public class KeyBindsHUD extends Module {
             }
             String name = module.getName();
             String keyName = getKeyName(key);
-            float nameWidth = Skia.getStringWidth(name, font);
-            float keyWidth = Skia.getStringWidth(keyName, font) + margin * 2.0f;
+            float nameWidth = Skia.getStringWidth(name, contentFont);
+            float keyWidth = Skia.getStringWidth(keyName, contentFont) + margin * 2.0f;
             float width = nameWidth + margin * 2.0f;
             float fullWidth = width + margin + keyWidth;
             if (fullWidth > maxWidth) {
@@ -258,15 +270,15 @@ public class KeyBindsHUD extends Module {
         boolean right = dragValue.getX() >= (float) mc.getWindow().getGuiScaledWidth() / 2.0f;
         float startY = dragValue.getY();
         float headerStartX = right ? dragValue.getX() + maxWidth - headerWidth : dragValue.getX();
-        Skia.drawShadow(headerStartX, startY, headerWidth, height, margin);
-        Skia.drawRoundedBlur(headerStartX, startY, headerWidth, height, margin);
-        Skia.drawRoundedRect(headerStartX, startY, headerWidth, height, margin, BACKGROUND_COLOR);
+        Skia.drawShadow(headerStartX, startY, headerWidth, headerHeight, margin);
+        Skia.drawRoundedBlur(headerStartX, startY, headerWidth, headerHeight, margin);
+        Skia.drawRoundedRect(headerStartX, startY, headerWidth, headerHeight, margin, BACKGROUND_COLOR);
         float headerIconX = headerStartX + margin;
         float headerTextX = headerIconX + headerIconWidth + margin;
-        float headerCenterY = startY + height / 2.0f;
-        Skia.drawHeightCenteredText(Icon.KEYBOARD, headerIconX, headerCenterY, Color.WHITE, iconFont);
-        Skia.drawHeightCenteredText(headerText, headerTextX, headerCenterY, Color.WHITE, font);
-        startY += height + margin;
+        float headerCenterY = startY + headerHeight / 2.0f;
+        Skia.drawHeightCenteredText(Icon.KEYBOARD, headerIconX, headerCenterY, Color.WHITE, headerIconFont);
+        Skia.drawHeightCenteredText(headerText, headerTextX, headerCenterY, Color.WHITE, headerFont);
+        startY += headerHeight + margin + headerGap;
         for (Module module : modules) {
             if (module == this) {
                 continue;
@@ -277,8 +289,8 @@ public class KeyBindsHUD extends Module {
             }
             String name = module.getName();
             String keyName = getKeyName(key);
-            float nameWidth = Skia.getStringWidth(name, font);
-            float keyWidth = Skia.getStringWidth(keyName, font) + margin * 2.0f;
+            float nameWidth = Skia.getStringWidth(name, contentFont);
+            float keyWidth = Skia.getStringWidth(keyName, contentFont) + margin * 2.0f;
             float width = nameWidth + margin * 2.0f;
             float fullWidth = width + margin + keyWidth;
             float targetX = right ? dragValue.getX() + maxWidth - fullWidth : dragValue.getX();
@@ -308,7 +320,7 @@ public class KeyBindsHUD extends Module {
             if (visible) {
                 yTimer.target = startY;
                 yTimer.update(true);
-                startY += height + margin;
+                startY += itemHeight + margin;
             } else {
                 yTimer.target = yTimer.value;
                 yTimer.update(true);
@@ -327,18 +339,18 @@ public class KeyBindsHUD extends Module {
             float keyStartX = startX + width + margin;
 
             if (alpha > 0.1f) {
-                Skia.drawShadow(startX, renderY, width, height, margin);
-                Skia.drawRoundedBlur(startX, renderY, width, height, margin);
-                Skia.drawShadow(keyStartX, renderY, keyWidth, height, margin);
-                Skia.drawRoundedBlur(keyStartX, renderY, keyWidth, height, margin);
+                Skia.drawShadow(startX, renderY, width, itemHeight, margin);
+                Skia.drawRoundedBlur(startX, renderY, width, itemHeight, margin);
+                Skia.drawShadow(keyStartX, renderY, keyWidth, itemHeight, margin);
+                Skia.drawRoundedBlur(keyStartX, renderY, keyWidth, itemHeight, margin);
             }
 
             Color background = new Color(0, 0, 0, Math.min(255, Math.max(0, (int) (BACKGROUND_COLOR.getAlpha() * alpha))));
             Color textColor = new Color(255, 255, 255, Math.min(255, Math.max(0, (int) (255.0f * alpha))));
-            Skia.drawRoundedRect(startX, renderY, width, height, margin, background);
-            Skia.drawRoundedRect(keyStartX, renderY, keyWidth, height, margin, background);
-            Skia.drawText(name, startX + margin, renderY + margin, textColor, font);
-            Skia.drawText(keyName, keyStartX + margin, renderY + margin, textColor, font);
+            Skia.drawRoundedRect(startX, renderY, width, itemHeight, margin, background);
+            Skia.drawRoundedRect(keyStartX, renderY, keyWidth, itemHeight, margin, background);
+            Skia.drawText(name, startX + margin, renderY + margin, textColor, contentFont);
+            Skia.drawText(keyName, keyStartX + margin, renderY + margin, textColor, contentFont);
         }
 
         dragValue.setWidth(maxWidth);

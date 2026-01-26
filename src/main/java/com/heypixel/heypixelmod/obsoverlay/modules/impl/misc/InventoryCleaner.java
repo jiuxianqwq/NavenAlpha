@@ -398,7 +398,7 @@ public class InventoryCleaner extends Module {
                     ItemStack stack = mc.player.getInventory().armor.get(i);
                     if (stack.getItem() instanceof ArmorItem item) {
                         if (!stack.isEmpty()
-                                && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))
+                                && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))
                                 && InventoryUtils.getBestArmorScore(item.getEquipmentSlot()) > InventoryUtils.getProtection(stack)) {
                             mc.gameMode.handleInventoryMouseClick(mc.player.inventoryMenu.containerId, 4 + (4 - i), 1, ClickType.THROW, mc.player);
                             this.inventoryOpen = true;
@@ -413,7 +413,7 @@ public class InventoryCleaner extends Module {
                         float currentItemScore = InventoryUtils.getProtection(stack);
                         boolean isBestItem = InventoryUtils.getBestArmorScore(item.getEquipmentSlot()) == currentItemScore;
                         boolean isBetterItem = InventoryUtils.getCurrentArmorScore(item.getEquipmentSlot()) < currentItemScore;
-                        if (isBestItem && isBetterItem && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+                        if (isBestItem && isBetterItem && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                             if (ix < 9) {
                                 mc.gameMode.handleInventoryMouseClick(mc.player.inventoryMenu.containerId, ix + 36, 0, ClickType.QUICK_MOVE, mc.player);
                             } else {
@@ -427,7 +427,7 @@ public class InventoryCleaner extends Module {
                 }
             }
 
-            if (this.clickOffHand && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+            if (this.clickOffHand && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                 mc.gameMode.handleInventoryMouseClick(mc.player.inventoryMenu.containerId, 45, 0, ClickType.PICKUP, mc.player);
                 this.inventoryOpen = true;
                 this.clickOffHand = false;
@@ -437,7 +437,7 @@ public class InventoryCleaner extends Module {
             if (this.offhandItems.isCurrentMode("Golden Apple")) {
                 ItemStack offHand = mc.player.getInventory().offhand.get(0);
                 int slot = InventoryUtils.getItemSlot(Items.GOLDEN_APPLE);
-                if (slot != -1 && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+                if (slot != -1 && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                     if (offHand.getItem() == Items.GOLDEN_APPLE) {
                         ItemStack goldenAppleStack = mc.player.getInventory().items.get(slot);
                         if (offHand.getCount() + goldenAppleStack.getCount() <= 64) {
@@ -467,14 +467,14 @@ public class InventoryCleaner extends Module {
                         shouldSwap = true;
                     }
 
-                    if (shouldSwap && slot != -1 && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+                    if (shouldSwap && slot != -1 && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                         this.swapOffHand(slot);
                     }
                 }
             } else if (this.offhandItems.isCurrentMode("Fishing Rod")) {
                 ItemStack offHand = mc.player.getInventory().offhand.get(0);
                 int slotx = InventoryUtils.getItemSlot(Items.FISHING_ROD);
-                if (slotx != -1 && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue())) && offHand.getItem() != Items.FISHING_ROD) {
+                if (slotx != -1 && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue())) && offHand.getItem() != Items.FISHING_ROD) {
                     this.swapOffHand(slotx);
                 }
             } else if (this.offhandItems.isCurrentMode("Block")) {
@@ -491,7 +491,7 @@ public class InventoryCleaner extends Module {
                         shouldSwapx = true;
                     }
 
-                    if (shouldSwapx && slotx != -1 && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+                    if (shouldSwapx && slotx != -1 && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                         this.swapOffHand(slotx);
                     }
                 }
@@ -673,7 +673,7 @@ public class InventoryCleaner extends Module {
     }
 
     private void throwItem(ItemStack item) {
-        if (InventoryUtils.isItemValid(item) && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+        if (InventoryUtils.isItemValid(item) && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
             int itemSlot = InventoryUtils.getItemStackSlot(item);
             if (itemSlot != -1) {
                 if (itemSlot < 9) {
@@ -690,7 +690,7 @@ public class InventoryCleaner extends Module {
 
     private void swapItem(int targetSlot, ItemStack bestItem) {
         ItemStack currentSlot = mc.player.getInventory().items.get(targetSlot);
-        if (InventoryUtils.isItemValid(currentSlot) && bestItem != currentSlot && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+        if (InventoryUtils.isItemValid(currentSlot) && bestItem != currentSlot && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
             int bestItemSlot = InventoryUtils.getItemStackSlot(bestItem);
             if (bestItemSlot != -1) {
                 if (bestItemSlot < 9) {
@@ -707,7 +707,7 @@ public class InventoryCleaner extends Module {
 
     private void swapItem(int targetSlot, Item item) {
         ItemStack currentSlot = mc.player.getInventory().items.get(targetSlot);
-        if (InventoryUtils.isItemValid(currentSlot) && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+        if (InventoryUtils.isItemValid(currentSlot) && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
             int bestItemSlot = InventoryUtils.getItemSlot(item);
             if (bestItemSlot != -1) {
                 ItemStack bestItemStack = mc.player.getInventory().items.get(bestItemSlot);

@@ -131,7 +131,7 @@ public class ChestStealer extends Module {
                             || chestTitle.equals(largeChest)
                             || chestTitle.equals("Chest")
                             || this.pickEnderChest.getCurrentValue() && chestTitle.equals(enderChest)) {
-                        if (this.isChestEmpty(menu) && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+                        if (this.isChestEmpty(menu) && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                             mc.player.closeContainer();
                         } else {
                             List<Integer> slots = IntStream.range(0, menu.getRowCount() * 9).boxed().collect(Collectors.toList());
@@ -139,7 +139,7 @@ public class ChestStealer extends Module {
 
                             for (Integer pSlotId : slots) {
                                 ItemStack stack = menu.getSlot(pSlotId).getItem();
-                                if (isItemUseful(stack) && this.isBestItemInChest(menu, stack) && timer.delay(MathUtils.getRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
+                                if (isItemUseful(stack) && this.isBestItemInChest(menu, stack) && timer.delay(MathUtils.getGaussianRandomIntInRange((int) this.delay.getCurrentValue(), (int) this.maxDelay.getCurrentValue()))) {
                                     mc.gameMode.handleInventoryMouseClick(menu.containerId, pSlotId, 0, ClickType.QUICK_MOVE, mc.player);
                                     timer.reset();
                                     break;

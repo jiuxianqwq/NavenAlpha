@@ -88,6 +88,18 @@ public class MathUtils {
         return endExclusive - startInclusive <= 0 ? startInclusive : startInclusive + new Random().nextInt(endExclusive - startInclusive);
     }
 
+    public static int getGaussianRandomIntInRange(int minInclusive, int maxInclusive) {
+        if (maxInclusive <= minInclusive) {
+            return minInclusive;
+        }
+
+        double mean = (minInclusive + maxInclusive) / 2.0;
+        double stdDev = (maxInclusive - minInclusive) / 6.0;
+        double value = mean + random.nextGaussian() * stdDev;
+        int rounded = (int) Math.round(value);
+        return clamp(rounded, minInclusive, maxInclusive);
+    }
+
     public static float normalizeAngle(float angle) {
         float newAngle = angle % 360.0F;
         return newAngle < -180.0F ? newAngle + 360.0F : (newAngle > 180.0F ? newAngle - 360.0F : newAngle);

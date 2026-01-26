@@ -21,6 +21,7 @@ import com.heypixel.heypixelmod.obsoverlay.utils.rotation.RotationManager;
 import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.FloatValue;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -61,7 +62,8 @@ public class AutoThrow extends Module {
             }
 
             if (Naven.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled()
-                    || Naven.getInstance().getModuleManager().getModule(Stuck.class).isEnabled()) {
+                    || Naven.getInstance().getModuleManager().getModule(Stuck.class).isEnabled()
+                    || Naven.getInstance().getModuleManager().getModule(LagRange.class).isEnabled()) {
                 rotationSet = 0;
                 return;
             }
@@ -76,10 +78,14 @@ public class AutoThrow extends Module {
                         int originalHotbar = mc.player.getInventory().selected;
                         boolean shouldSwap = originalHotbar != throwableHotbar;
                         if (shouldSwap) {
+                            mc.player.getInventory().selected = throwableHotbar;
                             mc.getConnection().send(new ServerboundSetCarriedItemPacket(throwableHotbar));
                             swapBack = originalHotbar;
+                        } else {
+                            swapBack = -1;
                         }
                         PacketUtils.sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, id));
+                        mc.getConnection().send(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
                     }
                 } else {
                     Optional<AbstractClientPlayer> target = getTarget();
@@ -92,8 +98,11 @@ public class AutoThrow extends Module {
                         }
                     }
                 }
+            } else {
+                rotationSet = 0;
             }
         } else if (swapBack != -1) {
+            mc.player.getInventory().selected = swapBack;
             mc.getConnection().send(new ServerboundSetCarriedItemPacket(swapBack));
             swapBack = -1;
         }

@@ -251,7 +251,7 @@ public class DynamicIslandHud extends Module {
     private void updateBlinkAnimation() {
         if (Naven.getInstance() == null || Naven.getInstance().getModuleManager() == null) {
             blinkProgressTimer.target = 0f;
-            blinkProgressTimer.value = 0f;
+            blinkProgressTimer.update(false);
             return;
         }
 
@@ -265,7 +265,7 @@ public class DynamicIslandHud extends Module {
             blinkProgressTimer.update(true);
         } else {
             blinkProgressTimer.target = 0f;
-            blinkProgressTimer.value = 0f;
+            blinkProgressTimer.update(false);
         }
     }
 
