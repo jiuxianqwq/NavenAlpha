@@ -10,9 +10,9 @@ import com.heypixel.heypixelmod.obsoverlay.modules.ModuleInfo;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.ClientFriend;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.Target;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.Teams;
+import com.heypixel.heypixelmod.obsoverlay.modules.impl.move.Blink;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.move.Scaffold;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.move.Stuck;
-import com.heypixel.heypixelmod.obsoverlay.modules.impl.combat.AntiBots;
 import com.heypixel.heypixelmod.obsoverlay.utils.FriendManager;
 import com.heypixel.heypixelmod.obsoverlay.utils.PacketUtils;
 import com.heypixel.heypixelmod.obsoverlay.utils.TimeHelper;
@@ -20,21 +20,21 @@ import com.heypixel.heypixelmod.obsoverlay.utils.rotation.Rotation;
 import com.heypixel.heypixelmod.obsoverlay.utils.rotation.RotationManager;
 import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.FloatValue;
+import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.EnderpearlItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.PotionItem;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.LingeringPotionItem;
+import net.minecraft.world.item.PotionItem;
 import net.minecraft.world.item.SplashPotionItem;
+import net.minecraft.world.item.Items;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -63,7 +63,8 @@ public class AutoThrow extends Module {
 
             if (Naven.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled()
                     || Naven.getInstance().getModuleManager().getModule(Stuck.class).isEnabled()
-                    || Naven.getInstance().getModuleManager().getModule(LagRange.class).isEnabled()) {
+                    || Naven.getInstance().getModuleManager().getModule(LagRange.class).isEnabled()
+                    || Naven.getInstance().getModuleManager().getModule(Blink.class).isEnabled()) {
                 rotationSet = 0;
                 return;
             }
@@ -78,11 +79,8 @@ public class AutoThrow extends Module {
                         int originalHotbar = mc.player.getInventory().selected;
                         boolean shouldSwap = originalHotbar != throwableHotbar;
                         if (shouldSwap) {
-                            mc.player.getInventory().selected = throwableHotbar;
                             mc.getConnection().send(new ServerboundSetCarriedItemPacket(throwableHotbar));
                             swapBack = originalHotbar;
-                        } else {
-                            swapBack = -1;
                         }
                         PacketUtils.sendSequencedPacket(id -> new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, id));
                         mc.getConnection().send(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
@@ -98,11 +96,8 @@ public class AutoThrow extends Module {
                         }
                     }
                 }
-            } else {
-                rotationSet = 0;
             }
         } else if (swapBack != -1) {
-            mc.player.getInventory().selected = swapBack;
             mc.getConnection().send(new ServerboundSetCarriedItemPacket(swapBack));
             swapBack = -1;
         }

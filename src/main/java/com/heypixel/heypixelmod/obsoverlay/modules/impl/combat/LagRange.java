@@ -10,6 +10,7 @@ import com.heypixel.heypixelmod.obsoverlay.modules.Category;
 import com.heypixel.heypixelmod.obsoverlay.modules.Module;
 import com.heypixel.heypixelmod.obsoverlay.modules.ModuleInfo;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.combat.AntiBots;
+import com.heypixel.heypixelmod.obsoverlay.modules.impl.combat.Velocity;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.ClientFriend;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.Target;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.Teams;
@@ -151,6 +152,14 @@ public class LagRange extends Module {
             return;
         }
 
+        Velocity velocity = Naven.getInstance().getModuleManager().getModule(Velocity.class);
+        if (velocity != null && velocity.isAlinkActive()) {
+            if (!delayedPackets.isEmpty()) {
+                flushAll();
+            }
+            currentDelayTicks = 0;
+        }
+
         Packet<?> packet = event.getPacket();
         if (event.getType() == EventType.SEND) {
             if (shouldResetOnPacket(packet)) {
@@ -229,6 +238,15 @@ public class LagRange extends Module {
         float currentRange = range.getCurrentValue();
         hasTarget = false;
         currentDelayTicks = 0;
+
+        Velocity velocity = Naven.getInstance().getModuleManager().getModule(Velocity.class);
+        if (velocity != null && velocity.isAlinkActive()) {
+            if (!delayedPackets.isEmpty()) {
+                flushAll();
+            }
+            this.setSuffix((int) delay.getCurrentValue() + "ms");
+            return;
+        }
 
         if (mc.gameMode == null || mc.gameMode.isDestroying()) {
             if (!delayedPackets.isEmpty()) {

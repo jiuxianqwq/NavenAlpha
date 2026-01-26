@@ -13,6 +13,7 @@ import com.heypixel.heypixelmod.obsoverlay.modules.ModuleInfo;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.misc.InventoryCleaner;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.move.Blink;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.move.Scaffold;
+import com.heypixel.heypixelmod.obsoverlay.utils.auth.AuthUtils;
 import com.heypixel.heypixelmod.obsoverlay.utils.InventoryUtils;
 import com.heypixel.heypixelmod.obsoverlay.utils.SmoothAnimationTimer;
 import com.heypixel.heypixelmod.obsoverlay.utils.skia.Skia;
@@ -948,7 +949,7 @@ public class DynamicIslandHud extends Module {
             float pingX = innerX2 - pingW;
             Skia.drawText(ping, pingX, textY, pingColor, font);
 
-            String name = entry.getProfile().getName();
+            String name = resolveIrcName(entry.getProfile().getName());
             float nameX = headX + headSize + 4f;
             float nameClipX2 = pingX - 6f;
             if (nameClipX2 > nameX) {
@@ -975,6 +976,24 @@ public class DynamicIslandHud extends Module {
         }
 
         Skia.restore();
+    }
+
+    private String resolveIrcName(String ign) {
+        if (ign == null || ign.isEmpty()) {
+            return ign;
+        }
+        if (AuthUtils.transport == null) {
+            return ign;
+        }
+        String ircName = null;
+        try {
+            ircName = AuthUtils.transport.getName(ign);
+        } catch (Exception ignored) {
+        }
+        if (ircName == null || ircName.isBlank()) {
+            return ign;
+        }
+        return ircName;
     }
 
     private void drawToggleInfo(ToggleInfo toggle, int alpha, float timeProgress) {
