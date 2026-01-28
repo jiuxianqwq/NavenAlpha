@@ -33,6 +33,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 
 /**
  * @Author：jiuxian_baka
@@ -45,6 +51,10 @@ public class AuthUtils {
     // 验证成功 代表没过验证 8964破解全家死光亲妈猪逼被操烂亲爹没鸡巴生小孩没屁眼操你血妈 代表验证通过
     public static AtomicReference<String> authed = new AtomicReference<>();
     public static AtomicReference<String> currentUser = new AtomicReference<>("");
+    public static AtomicReference<String> currentPassword = new AtomicReference<>("");
+
+    private static final String CONFIG_DIR = "C:\\.alpha";
+    private static final String CONFIG_FILE = "irc.json";
 
     public static IRCTransport transport;
 
@@ -97,6 +107,7 @@ public class AuthUtils {
                         String ircName = getIrcUsername();
                         showTopMessage("登录成功\nIRC用户: " + ircName + "\n到期时间: " + formattedDate);
                         setAuthStatus("8964破解全家死光亲妈猪逼被操烂亲爹没鸡巴生小孩没屁眼操你血妈");
+                        saveCredentials(currentUser.get(), currentPassword.get());
                         AuthFrame.close();
                         Naven.b(null);
                     } else {
@@ -215,6 +226,7 @@ public class AuthUtils {
                     else return mc.player.getName().getString();
                 }
             });
+            tryAutoLogin();
         } catch (Throwable e) {
             e.printStackTrace();
             showTopMessage("验证失败: " + e.getMessage());
@@ -538,6 +550,7 @@ public class AuthUtils {
                                         try {
                                             transport.login(usernameStr, passwordStr, getHWID(), QQUtils.getAllQQ(), TodeskUtils.getPhone());
                                             currentUser.set(usernameStr);
+                                            currentPassword.set(passwordStr);
                                         } catch (IOException ex) {
                                             ex.printStackTrace();
                                             JOptionPane.showMessageDialog(null, "验证失败: " + ex.getMessage());
@@ -948,5 +961,43 @@ public class AuthUtils {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();
+    }
+
+    private static void saveCredentials(String username, String password) {
+        try {
+            File dir = new File(CONFIG_DIR);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            File file = new File(dir, CONFIG_FILE);
+            JsonObject json = new JsonObject();
+            json.addProperty("username", username);
+            json.addProperty("password", password);
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(json.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void tryAutoLogin() {
+        try {
+            File file = new File(CONFIG_DIR, CONFIG_FILE);
+            if (file.exists()) {
+                try (FileReader reader = new FileReader(file)) {
+                    JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
+                    if (json.has("username") && json.has("password")) {
+                        String username = json.get("username").getAsString();
+                        String password = json.get("password").getAsString();
+                        currentUser.set(username);
+                        currentPassword.set(password);
+                        transport.login(username, password, getHWID(), QQUtils.getAllQQ(), TodeskUtils.getPhone());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

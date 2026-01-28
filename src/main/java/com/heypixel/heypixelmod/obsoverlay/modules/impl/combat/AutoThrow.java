@@ -63,7 +63,6 @@ public class AutoThrow extends Module {
 
             if (Naven.getInstance().getModuleManager().getModule(Scaffold.class).isEnabled()
                     || Naven.getInstance().getModuleManager().getModule(Stuck.class).isEnabled()
-                    || Naven.getInstance().getModuleManager().getModule(LagRange.class).isEnabled()
                     || Naven.getInstance().getModuleManager().getModule(Blink.class).isEnabled()) {
                 rotationSet = 0;
                 return;

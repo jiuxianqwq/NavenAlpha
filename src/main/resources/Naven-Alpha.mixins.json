@@ -7,6 +7,7 @@
   "mixins": [],
   "client": [
     "CapabilityTrackerMixin",
+    "MixinAbstractContainerScreen",
     "MixinAbstractClientPlayer",
     "MixinCamera",
     "MixinChatComponent",
@@ -22,6 +23,7 @@
     "MixinFriendlyByteBuf",
     "MixinGameRenderer",
     "MixinGui",
+    "MixinInventoryScreen",
     "MixinItem",
     "MixinItemInHandLayer",
     "MixinItemInHandRenderer",
@@ -37,6 +39,7 @@
     "MixinPlayer",
     "MixinPlayerTabOverlay",
     "MixinProjectileUtil",
+    "MixinScreen",
     "MixinTimer",
     "MixinVertexBuffer",
     "MixinWindow",

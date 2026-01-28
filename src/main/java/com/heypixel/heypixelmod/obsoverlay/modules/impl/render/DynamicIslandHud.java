@@ -88,12 +88,12 @@ public class DynamicIslandHud extends Module {
     }
 
     private static final class Timing {
-        static final long EXPAND = 300L;
-        static final long DISPLAY = 1500L;
-        static final long COLLAPSE_1 = 300L;
-        static final long COLLAPSE_2 = 400L;
+        static final long EXPAND = 220L;
+        static final long DISPLAY = 1200L;
+        static final long COLLAPSE_1 = 220L;
+        static final long COLLAPSE_2 = 260L;
         static final long TOTAL = EXPAND + DISPLAY + COLLAPSE_1 + COLLAPSE_2;
-        static final long TAB_TRANSITION = 450L;
+        static final long TAB_TRANSITION = 380L;
     }
 
     private enum Phase {
@@ -341,7 +341,7 @@ public class DynamicIslandHud extends Module {
         this.targetExpandedWidth = newTargetW;
 
         if ((next.type == ToggleType.SCAFFOLD || next.type == ToggleType.BLINK) && !next.enabled) {
-            this.toggleStartTime = System.currentTimeMillis() - (Timing.EXPAND + Timing.DISPLAY);
+            this.toggleStartTime = System.currentTimeMillis() - (Timing.EXPAND + Timing.DISPLAY + Timing.COLLAPSE_1);
         } else {
             this.toggleStartTime = System.currentTimeMillis();
         }
@@ -397,7 +397,8 @@ public class DynamicIslandHud extends Module {
                 setPhase(Phase.IDLE, 0f, idleW, baseH, 1f);
                 targetAnimW = idleW;
             } else if (dt < Timing.EXPAND) {
-                float p = easeOut(dt / (float) Timing.EXPAND);
+                float t = clamp(dt / (float) Timing.EXPAND);
+                float p = easeOut(t);
                 setPhase(Phase.EXPANDING, p,
                         lerp(p, expandStartW, targetExpandedWidth),
                         lerp(p, expandStartH, Size.EXPANDED_H),
@@ -408,11 +409,13 @@ public class DynamicIslandHud extends Module {
                 setPhase(Phase.DISPLAY, p, animW, Size.EXPANDED_H, 1f);
                 targetAnimW = targetExpandedWidth;
             } else if (dt < Timing.EXPAND + Timing.DISPLAY + Timing.COLLAPSE_1) {
-                float p = easeOut((dt - Timing.EXPAND - Timing.DISPLAY) / (float) Timing.COLLAPSE_1);
+                float t = clamp((dt - Timing.EXPAND - Timing.DISPLAY) / (float) Timing.COLLAPSE_1);
+                float p = easeInOut(t);
                 setPhase(Phase.COLLAPSE_1, p, targetExpandedWidth, Size.EXPANDED_H, 1f);
                 targetAnimW = targetExpandedWidth;
             } else {
-                float p = easeOut((dt - Timing.EXPAND - Timing.DISPLAY - Timing.COLLAPSE_1) / (float) Timing.COLLAPSE_2);
+                float t = clamp((dt - Timing.EXPAND - Timing.DISPLAY - Timing.COLLAPSE_1) / (float) Timing.COLLAPSE_2);
+                float p = easeInOut(t);
                 setPhase(Phase.COLLAPSE_2, p,
                         lerp(p, targetExpandedWidth, idleW),
                         lerp(p, Size.EXPANDED_H, baseH),
@@ -423,7 +426,7 @@ public class DynamicIslandHud extends Module {
 
         // Apply smooth interpolation to animW to avoid jumps when targetExpandedWidth changes
         if (!isTabPhase()) {
-            this.animW = lerp(0.3f, this.animW, targetAnimW);
+            this.animW = lerp(0.38f, this.animW, targetAnimW);
         } else {
             // In Tab phase, we use the exact calculated value because the lerp is already in the phase logic
             // and we don't want to double-smooth or lag behind the complex tab animation
@@ -458,7 +461,7 @@ public class DynamicIslandHud extends Module {
 
     private float interpolateBlurOpacity(float targetBlur) {
         float delta = targetBlur - this.blurOpacity;
-        float interpolationFactor = 0.15f;
+        float interpolationFactor = 0.22f;
         return this.blurOpacity + delta * interpolationFactor;
     }
 
@@ -490,9 +493,9 @@ public class DynamicIslandHud extends Module {
     private void renderExpanding() {
         drawBackground(Size.INVENTORY_BG_COLOR);
         drawSideInfo(1f);
-        if (currentToggle != null && currentToggle.type == ToggleType.SCAFFOLD) {
+        if (currentToggle != null && currentToggle.type == ToggleType.SCAFFOLD && currentToggle.enabled) {
             drawScaffoldInfo(progress);
-        } else if (currentToggle != null && currentToggle.type == ToggleType.BLINK) {
+        } else if (currentToggle != null && currentToggle.type == ToggleType.BLINK && currentToggle.enabled) {
             drawBlinkInfo(progress);
         } else if (currentToggle != null) {
             drawToggleInfo(currentToggle, alphaFromProgress(progress), 0f);
@@ -506,9 +509,9 @@ public class DynamicIslandHud extends Module {
     private void renderDisplay() {
         drawBackground(Size.INVENTORY_BG_COLOR);
         drawSideInfo(1f);
-        if (currentToggle != null && currentToggle.type == ToggleType.SCAFFOLD) {
+        if (currentToggle != null && currentToggle.type == ToggleType.SCAFFOLD && currentToggle.enabled) {
             drawScaffoldInfo(1f);
-        } else if (currentToggle != null && currentToggle.type == ToggleType.BLINK) {
+        } else if (currentToggle != null && currentToggle.type == ToggleType.BLINK && currentToggle.enabled) {
             drawBlinkInfo(1f);
         } else if (currentToggle != null) {
             drawToggleInfo(currentToggle, 255, progress);
@@ -534,7 +537,11 @@ public class DynamicIslandHud extends Module {
     private void renderCollapse2() {
         drawBackground(Size.INVENTORY_BG_COLOR);
         drawSideInfo(1f);
-        if (isBlinkActive()) {
+        if (currentToggle != null && currentToggle.type == ToggleType.BLINK && !currentToggle.enabled) {
+            drawBlinkInfo(1f - progress);
+        } else if (currentToggle != null && currentToggle.type == ToggleType.SCAFFOLD && !currentToggle.enabled) {
+            drawScaffoldInfo(1f - progress);
+        } else if (isBlinkActive()) {
             drawBlinkInfo(1f);
         } else if (isScaffoldActive()) {
             drawScaffoldInfo(1f);
@@ -609,7 +616,7 @@ public class DynamicIslandHud extends Module {
         float by = centerY + (metrics.getAscent() - metrics.getDescent()) / 2f - metrics.getAscent();
         int skColor = io.github.humbleui.skija.Color.makeARGB(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue());
         try (Paint paint = new Paint().setColor(skColor);
-             Paint blurPaint = paint.makeClone().setImageFilter(ImageFilter.makeBlur(1.0F, 1.0F, FilterTileMode.DECAL))) {
+             Paint blurPaint = paint.makeClone().setImageFilter(ImageFilter.makeBlur(2.5F, 2.5F, FilterTileMode.DECAL))) {
             Skia.getCanvas().drawString(name, bx, by, font, blurPaint);
             Skia.getCanvas().drawString(name, bx - 0.2f, by, font, paint);
             Skia.getCanvas().drawString(name, bx + 0.2f, by, font, paint);
@@ -655,12 +662,14 @@ public class DynamicIslandHud extends Module {
             float fillW = barW * progress;
             Color barBg = withAlpha(new Color(210, 210, 210), (int) (160 * alpha));
             Color barFill = withAlpha(new Color(196, 128, 224), (int) (220 * alpha));
+            Color barGlow = withAlpha(new Color(196, 128, 224), (int) (120 * alpha));
             Path barPath = new Path();
             barPath.addRRect(RRect.makeXYWH(barX, barY, barW, barHeight, barRadius));
             Skia.save();
             Skia.getCanvas().clipPath(barPath, ClipMode.INTERSECT, true);
             Skia.drawRoundedRect(barX, barY, barW, barHeight, barRadius, barBg);
             if (fillW > 0.5f) {
+                Skia.drawShadow(barX, barY, fillW, barHeight, barRadius, barGlow);
                 Skia.drawRoundedRect(barX, barY, fillW, barHeight, barRadius, barFill);
             }
             Skia.restore();
@@ -752,12 +761,14 @@ public class DynamicIslandHud extends Module {
             float fillW = barW * progress;
             Color barBg = withAlpha(new Color(210, 210, 210), (int) (160 * alpha));
             Color barFill = withAlpha(new Color(196, 128, 224), (int) (220 * alpha));
+            Color barGlow = withAlpha(new Color(196, 128, 224), (int) (120 * alpha));
             Path barPath = new Path();
             barPath.addRRect(RRect.makeXYWH(barX, barY, barW, barHeight, barRadius));
             Skia.save();
             Skia.getCanvas().clipPath(barPath, ClipMode.INTERSECT, true);
             Skia.drawRoundedRect(barX, barY, barW, barHeight, barRadius, barBg);
             if (fillW > 0.5f) {
+                Skia.drawShadow(barX, barY, fillW, barHeight, barRadius, barGlow);
                 Skia.drawRoundedRect(barX, barY, fillW, barHeight, barRadius, barFill);
             }
             Skia.restore();
@@ -813,7 +824,6 @@ public class DynamicIslandHud extends Module {
         float centerY = animY + sideH / 2f;
         float textY = getTextBaseline(centerY, font);
         Color color = withAlpha(Color.WHITE, (int) (255 * alpha));
-        Color bgColor = withAlpha(Size.INVENTORY_BG_COLOR, (int) (70 * alpha));
         float padding = 6f;
         float iconSpacing = 4f;
 
@@ -832,13 +842,6 @@ public class DynamicIslandHud extends Module {
         float timeTextCenterY = textY + (timeTextBounds.getTop() + timeTextBounds.getBottom()) / 2f;
         float timeIconY = timeTextCenterY - (timeIconBounds.getTop() + timeIconBounds.getBottom()) / 2f;
 
-        if (enableBloom.getCurrentValue()) {
-            Skia.drawShadow(timeBgX, animY, timeBgW, sideH, getRadius());
-        }
-        if (blur.getCurrentValue() && blurOpacity > 0.05f) {
-            Skia.drawRoundedBlur(timeBgX, animY, timeBgW, sideH, getRadius());
-        }
-        Skia.drawRoundedRect(timeBgX, animY, timeBgW, sideH, getRadius(), bgColor);
         float timeInnerW = timeBgW - padding * 2f;
         float timeStartX = timeBgX + timeBgW / 2f - timeGroupW / 2f - timeGroupLeft;
         float timeClipX = timeBgX + padding;
@@ -864,13 +867,6 @@ public class DynamicIslandHud extends Module {
         float fpsTextCenterY = textY + (fpsTextBounds.getTop() + fpsTextBounds.getBottom()) / 2f;
         float fpsIconY = fpsTextCenterY - (fpsIconBounds.getTop() + fpsIconBounds.getBottom()) / 2f;
 
-        if (enableBloom.getCurrentValue()) {
-            Skia.drawShadow(nameBgX, animY, fpsBgW, sideH, getRadius());
-        }
-        if (blur.getCurrentValue() && blurOpacity > 0.05f) {
-            Skia.drawRoundedBlur(nameBgX, animY, fpsBgW, sideH, getRadius());
-        }
-        Skia.drawRoundedRect(nameBgX, animY, fpsBgW, sideH, getRadius(), bgColor);
         float fpsInnerW = fpsBgW - padding * 2f;
         float fpsStartX = nameBgX + fpsBgW / 2f - fpsGroupW / 2f - fpsGroupLeft;
         float fpsClipX = nameBgX + padding;
@@ -1134,6 +1130,7 @@ public class DynamicIslandHud extends Module {
         float inv = -2f * t + 2f;
         return 1f - (inv * inv * inv) / 2f;
     }
+
 
     private static int alphaFromProgress(float p) {
         return (int) (255 * p);

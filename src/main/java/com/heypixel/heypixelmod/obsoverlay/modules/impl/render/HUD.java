@@ -10,8 +10,14 @@ import com.heypixel.heypixelmod.obsoverlay.utils.skia.Skia;
 import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.FloatValue;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 import java.awt.*;
+import java.lang.reflect.Field;
 
 @ModuleInfo(
         name = "HUD",
@@ -95,6 +101,50 @@ public class HUD extends Module {
             .setDefaultBooleanValue(true)
             .build()
             .getBooleanValue();
+
+    public BooleanValue betterGui = ValueBuilder.create(this, "Better GUI")
+            .setDefaultBooleanValue(true)
+            .build()
+            .getBooleanValue();
+
+    public BooleanValue betterGuiBlur = ValueBuilder.create(this, "Better GUI Blur")
+            .setDefaultBooleanValue(true)
+            .setVisibility(() -> betterGui.getCurrentValue())
+            .build()
+            .getBooleanValue();
+
+    public BooleanValue betterGuiShadow = ValueBuilder.create(this, "Better GUI Shadow")
+            .setDefaultBooleanValue(true)
+            .setVisibility(() -> betterGui.getCurrentValue())
+            .build()
+            .getBooleanValue();
+
+    public FloatValue betterGuiRadius = ValueBuilder.create(this, "Better GUI Radius")
+            .setDefaultFloatValue(10.0F)
+            .setFloatStep(1.0F)
+            .setMinFloatValue(0.0F)
+            .setMaxFloatValue(30.0F)
+            .setVisibility(() -> betterGui.getCurrentValue())
+            .build()
+            .getFloatValue();
+
+    public FloatValue betterGuiOpacity = ValueBuilder.create(this, "Better GUI Opacity")
+            .setDefaultFloatValue(110.0F)
+            .setFloatStep(5.0F)
+            .setMinFloatValue(0.0F)
+            .setMaxFloatValue(255.0F)
+            .setVisibility(() -> betterGui.getCurrentValue())
+            .build()
+            .getFloatValue();
+
+    public FloatValue betterGuiSlotOpacity = ValueBuilder.create(this, "Better GUI Slot Opacity")
+            .setDefaultFloatValue(35.0F)
+            .setFloatStep(5.0F)
+            .setMinFloatValue(0.0F)
+            .setMaxFloatValue(255.0F)
+            .setVisibility(() -> betterGui.getCurrentValue())
+            .build()
+            .getFloatValue();
 
     private float chatMinX = Float.MAX_VALUE;
     private float chatMinY = Float.MAX_VALUE;
@@ -200,13 +250,85 @@ public class HUD extends Module {
         chatInputDrawnSequence = -1;
     }
 
+    private static Field leftPosField, topPosField, imageWidthField, imageHeightField, hoveredSlotField;
+    private static boolean reflectionFailed = false;
+
+    private void initReflection() {
+        if (reflectionFailed || leftPosField != null) return;
+        try {
+            Class<?> clazz = AbstractContainerScreen.class;
+            try {
+                leftPosField = clazz.getDeclaredField("leftPos");
+                topPosField = clazz.getDeclaredField("topPos");
+                imageWidthField = clazz.getDeclaredField("imageWidth");
+                imageHeightField = clazz.getDeclaredField("imageHeight");
+            } catch (NoSuchFieldException e) {
+                reflectionFailed = true;
+                return;
+            }
+            leftPosField.setAccessible(true);
+            topPosField.setAccessible(true);
+            imageWidthField.setAccessible(true);
+            imageHeightField.setAccessible(true);
+            try {
+                hoveredSlotField = clazz.getDeclaredField("hoveredSlot");
+                hoveredSlotField.setAccessible(true);
+            } catch (NoSuchFieldException ignored) {
+                hoveredSlotField = null;
+            }
+        } catch (Exception e) {
+            reflectionFailed = true;
+        }
+    }
+
     @EventTarget
     public void onRenderSkia(EventRenderSkia event) {
         boolean renderChat = shouldRenderChat();
         boolean renderInput = shouldRenderChatInput();
-        if (!renderChat && !renderInput) {
+        boolean renderBetterGui = betterGui.getCurrentValue() && mc.screen instanceof AbstractContainerScreen;
+
+        if (!renderChat && !renderInput && !renderBetterGui) {
             return;
         }
+
+        if (renderBetterGui) {
+            initReflection();
+            if (!reflectionFailed) {
+                try {
+                    AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>) mc.screen;
+                    int leftPos = leftPosField.getInt(screen);
+                    int topPos = topPosField.getInt(screen);
+                    int imageWidth = imageWidthField.getInt(screen);
+                    int imageHeight = imageHeightField.getInt(screen);
+
+                    float x = (float) leftPos;
+                    float y = (float) topPos;
+                    float w = (float) imageWidth;
+                    float h = (float) imageHeight;
+                    float radius = betterGuiRadius.getCurrentValue();
+
+                    if (betterGuiShadow.getCurrentValue()) {
+                        Skia.drawShadow(x, y, w, h, radius);
+                    }
+                    if (betterGuiBlur.getCurrentValue()) {
+                        Skia.drawRoundedBlur(x, y, w, h, radius);
+                    }
+                    Skia.drawRoundedRect(x, y, w, h, radius, new Color(18, 18, 18, (int) betterGuiOpacity.getCurrentValue()));
+
+                    AbstractContainerMenu menu = screen.getMenu();
+                    if (menu != null) {
+                        Color slotColor = new Color(25, 25, 25, (int) betterGuiSlotOpacity.getCurrentValue());
+                        for (Slot slot : menu.slots) {
+                            float slotX = x + slot.x;
+                            float slotY = y + slot.y;
+                            Skia.drawRoundedRect(slotX, slotY, 16, 16, 4, slotColor);
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+
         if (renderChat) {
             if (hasChatBounds && chatDrawnSequence != chatRenderSequence) {
                 float padding = 4.0F;
@@ -281,5 +403,50 @@ public class HUD extends Module {
 
     private boolean shouldRenderChatInput() {
         return this.isEnabled() && chatInputBackground.getCurrentValue();
+    }
+
+    public void renderBetterGuiItems(AbstractContainerScreen<?> screen, GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!betterGui.getCurrentValue()) {
+            return;
+        }
+        initReflection();
+        if (reflectionFailed) {
+            return;
+        }
+        try {
+            int leftPos = leftPosField.getInt(screen);
+            int topPos = topPosField.getInt(screen);
+            AbstractContainerMenu menu = screen.getMenu();
+            if (menu == null) {
+                return;
+            }
+            Slot hovered = null;
+            float x = (float) leftPos;
+            float y = (float) topPos;
+            for (Slot slot : menu.slots) {
+                float slotX = x + slot.x;
+                float slotY = y + slot.y;
+                if (mouseX >= slotX && mouseX < slotX + 16 && mouseY >= slotY && mouseY < slotY + 16) {
+                    hovered = slot;
+                }
+                if (slot.hasItem()) {
+                    ItemStack stack = slot.getItem();
+                    graphics.renderItem(stack, (int) slotX, (int) slotY);
+                    graphics.renderItemDecorations(mc.font, stack, (int) slotX, (int) slotY);
+                }
+            }
+            ItemStack carried = menu.getCarried();
+            if (!carried.isEmpty()) {
+                int drawX = mouseX - 8;
+                int drawY = mouseY - 8;
+                graphics.renderItem(carried, drawX, drawY);
+                graphics.renderItemDecorations(mc.font, carried, drawX, drawY);
+            }
+            mc.renderBuffers().bufferSource().endBatch();
+            if (hoveredSlotField != null) {
+                hoveredSlotField.set(screen, hovered);
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

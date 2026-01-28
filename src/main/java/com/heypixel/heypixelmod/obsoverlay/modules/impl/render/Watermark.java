@@ -87,7 +87,7 @@ public class Watermark extends Module {
 
     private void drawGradientText(String text, float x, float y, Font font, Shader shader) {
         try (Paint paint = new Paint().setShader(shader);
-             Paint blurPaint = paint.makeClone().setImageFilter(ImageFilter.makeBlur(1.0F, 1.0F, FilterTileMode.DECAL))) {
+             Paint blurPaint = paint.makeClone().setImageFilter(ImageFilter.makeBlur(2.5F, 2.5F, FilterTileMode.DECAL))) {
             Rect bounds = font.measureText(text);
             float bx = x - bounds.getLeft();
             float by = y - bounds.getTop();

@@ -5,6 +5,7 @@ import com.heypixel.heypixelmod.obsoverlay.events.impl.EventRender;
 import com.heypixel.heypixelmod.obsoverlay.events.impl.EventRender2D;
 import com.heypixel.heypixelmod.obsoverlay.events.impl.EventRenderAfterWorld;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.FullBright;
+import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.MotionBlur;
 import com.heypixel.heypixelmod.obsoverlay.modules.impl.render.NoHurtCam;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -63,16 +64,16 @@ public class MixinGameRenderer {
         Naven.getInstance().getEventManager().call(new EventRenderAfterWorld());
     }
 
-//    @Inject(
-//            method = {"render"},
-//            at = {@At("TAIL")}
-//    )
-//    public void render(float tickDelta, long startTime, boolean tick, CallbackInfo ci) {
-//        MotionBlur motionblur = MotionBlur.instance;
-//        if (motionblur != null && motionblur.isEnabled() && this.minecraft.player != null && motionblur.shader != null) {
-//            motionblur.shader.process(tickDelta);
-//        }
-//    }
+    @Inject(
+            method = {"render"},
+            at = {@At("TAIL")}
+    )
+    public void render(float tickDelta, long startTime, boolean tick, CallbackInfo ci) {
+        MotionBlur motionblur = MotionBlur.instance;
+        if (motionblur != null && motionblur.isEnabled() && this.minecraft.player != null && motionblur.shader != null) {
+            motionblur.shader.process(tickDelta);
+        }
+    }
 
     @Inject(
             method = {"render"},

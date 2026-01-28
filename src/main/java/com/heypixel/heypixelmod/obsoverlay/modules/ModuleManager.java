@@ -53,7 +53,7 @@ public class ModuleManager {
     private void initModules() {
         this.registerModule(
                 new KillAura(),
-                new LagRange(),
+                new AutoThrow(),
                 new HUD(),
                 new DynamicIslandHud(),
                 new Velocity(),
@@ -79,7 +79,6 @@ public class ModuleManager {
                 new AutoStuck(),
                 new ScoreboardSpoof(),
                 new AutoSoup(),
-                new AutoThrow(),
                 new AutoTools(),
                 new ViewClip(),
 //                new Disabler(),
@@ -104,7 +103,7 @@ public class ModuleManager {
                 new NoRender(),
                 new ItemTags(),
                 new SafeWalk(),
-//                new MotionBlur(),
+                new MotionBlur(),
                 new Helper(),
                 new NoSlow(),
                 new LongJump(),
