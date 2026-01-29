@@ -2,14 +2,17 @@ package com.heypixel.heypixelmod.obsoverlay.utils;
 
 import com.heypixel.heypixelmod.obsoverlay.events.api.EventTarget;
 import com.heypixel.heypixelmod.obsoverlay.events.api.types.EventType;
+import com.heypixel.heypixelmod.obsoverlay.events.impl.EventHandlePacket;
 import com.heypixel.heypixelmod.obsoverlay.events.impl.EventGlobalPacket;
 import com.heypixel.heypixelmod.obsoverlay.events.impl.EventRender2D;
 import com.heypixel.heypixelmod.obsoverlay.events.impl.EventRespawn;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.protocol.game.ClientboundPingPacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
 import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
+import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ServerUtils {
     public static final Map<String, AtomicInteger> HEALTHS = new HashMap<>();
     private static int grimTransactionCount = 0;
+    private static int lagbackCount = 0;
 
     public static int getGrimTransactionCount() {
         return grimTransactionCount;
@@ -28,6 +32,13 @@ public class ServerUtils {
         if (e.getType() == EventType.RECEIVE) {
             if (e.getPacket() instanceof ClientboundPingPacket) {
                 grimTransactionCount++;
+            }
+
+            if (e.getPacket() instanceof ClientboundPlayerPositionPacket) {
+                if (Minecraft.getInstance().player != null && Minecraft.getInstance().level != null) {
+                    lagbackCount++;
+                    ChatUtils.addChatMessage("§bLagback detected. Count: " + lagbackCount);
+                }
             }
 
             if (e.getPacket() instanceof ClientboundSetScorePacket packet
@@ -60,5 +71,15 @@ public class ServerUtils {
     @EventTarget
     public void onRespawn(EventRespawn e) {
         grimTransactionCount = 0;
+    }
+
+    @EventTarget(0)
+    public void onPacket(EventHandlePacket e) {
+        if (e.getPacket() instanceof ClientboundSystemChatPacket packet) {
+            String words = packet.content().getString();
+            if (words.contains("游戏准备开始") || words.contains("游戏结束")) {
+                lagbackCount = 0;
+            }
+        }
     }
 }

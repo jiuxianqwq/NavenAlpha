@@ -88,6 +88,10 @@ public class Skia {
         glowTasks.clear();
     }
 
+    public static void flushGlows() {
+        renderGlows();
+    }
+
     private static final int[] COLOR_CODES = new int[]{
             0xFF000000, 0xFF0000AA, 0xFF00AA00, 0xFF00AAAA, 0xFFAA0000, 0xFFAA00AA, 0xFFAA5500, 0xFFAAAAAA,
             0xFF555555, 0xFF5555FF, 0xFF55FF55, 0xFF55FFFF, 0xFFFF5555, 0xFFFF55FF, 0xFFFFFF55, 0xFFFFFFFF
@@ -146,6 +150,18 @@ public class Skia {
                 SurfaceOrigin.BOTTOM_LEFT);
         restore();
 
+    }
+
+    public static void drawRoundedGuiBlur(float x, float y, float width, float height, float radius) {
+        Window window = Minecraft.getInstance().getWindow();
+        Path path = new Path();
+        path.addRRect(RRect.makeXYWH(x, y, width, height, radius));
+
+        save();
+        getCanvas().clipPath(path, ClipMode.INTERSECT, true);
+        drawImage(KawaseBlur.GUI_BLUR.getTexture(), 0, 0, window.getWidth() / (float) window.getGuiScale(), window.getHeight() / (float) window.getGuiScale(), 1F,
+                SurfaceOrigin.BOTTOM_LEFT);
+        restore();
     }
 
     public static void drawGuiBlur() {

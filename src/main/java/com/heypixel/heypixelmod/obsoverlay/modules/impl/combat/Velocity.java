@@ -215,6 +215,10 @@ public class Velocity extends Module {
         }
     }
 
+    public boolean isAlinkActive() {
+        return mode.isCurrentMode("NoXZ") && stage != VelocityStage.NONE;
+    }
+
     @Override
     public void onEnable() {
         jump = false;

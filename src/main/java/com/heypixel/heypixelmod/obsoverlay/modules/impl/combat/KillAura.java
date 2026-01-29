@@ -24,6 +24,7 @@ import com.heypixel.heypixelmod.obsoverlay.values.ValueBuilder;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.BooleanValue;
 import com.heypixel.heypixelmod.obsoverlay.values.impl.FloatValue;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -73,6 +74,13 @@ public class KillAura extends Module {
             .setFloatStep(1.0F)
             .setMinFloatValue(1.0F)
             .setMaxFloatValue(180.0F)
+            .build()
+            .getFloatValue();
+    FloatValue fov = ValueBuilder.create(this, "FOV")
+            .setDefaultFloatValue(360.0F)
+            .setFloatStep(1.0F)
+            .setMinFloatValue(0.0F)
+            .setMaxFloatValue(360.0F)
             .build()
             .getFloatValue();
     private List<Entity> targets;
@@ -130,6 +138,7 @@ public class KillAura extends Module {
     private void findTarget() {
         float range = aimRange.getCurrentValue();
         double rangeSq = range * range;
+        float currentFov = fov.getCurrentValue();
 
         this.target = null;
         double minDstSq = Double.MAX_VALUE;
@@ -148,6 +157,7 @@ public class KillAura extends Module {
                         && !Teams.isSameTeam(e)
                         && !FriendManager.isFriend(e)
                         && !ClientFriend.isUser(e)
+                        && Math.abs(Mth.wrapDegrees(RotationUtils.calculate(e).getYaw() - mc.player.getYRot())) <= currentFov
         );
 
         targets = candidates;

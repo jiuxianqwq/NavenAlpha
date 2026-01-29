@@ -25,7 +25,7 @@ public class NameProtect extends Module {
         if (!instance.isEnabled() || mc.player == null) {
             return string;
         } else {
-            return string.contains(mc.player.getName().getString()) ? StringUtils.replace(string, mc.player.getName().getString(), "§dHidden§7") : string;
+            return string.contains(mc.player.getName().getString()) ? StringUtils.replace(string, mc.player.getName().getString(), "§dAlpha§7") : string;
         }
     }
 
